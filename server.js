@@ -9,8 +9,8 @@ const Errors = require('./errors.js');
 const database = require('./database.js');
 const yandex = require('yandex-translate')(process.env.YandexApiKey);
 const uuidV5 = require('uuid/v5');
-//Login to database
 
+//Login to database
 database.authenticate().catch(err => console.error('Unable to connect to the database:', err));
 
 //Creating table 'Guilds' & syncing
@@ -18,7 +18,6 @@ const Guilds = database.define('Guilds', GuildBase);
 
 app.get('/data', (req, res) => res.send(data));
 app.get("/", (request, response) => response.send('Yui is up and running in the 90\'s'));
-
 
 //Gif base
 var gif_hug = data.hug, gif_kiss = data.kiss, gif_slap = data.slap,
@@ -66,14 +65,13 @@ client.on('message', msg => {
   var memberN = msg.member.nickname, randomNumber, answer;
   if(memberN === null) memberN = msg.author.username;
   if(!(msg.content.startsWith('yui!'))) return;
-  var command = msg.content.substring('yui!'.length).split(' ');
+  var command = msg.content.substring('yui!'.length).split(' ').filter(element => element);
   
   switch(command[0]) {
     case 'kostka':
       randomNumber = genRandom(7);
       if(randomNumber == 0) randomNumber += 1; 
-      var embed = new Discord.RichEmbed().setTitle('Witaj ' + memberN).setColor('RANDOM').addField('Rzuciłeś kostką!', 'Wyrzuciłeś `' + randomNumber + '`');
-      msg.channel.send(embed);
+      msg.channel.send(new Discord.RichEmbed().setTitle('Witaj ' + memberN).setColor('RANDOM').addField('Rzuciłeś kostką!', 'Wyrzuciłeś `' + randomNumber + '`'));
       break;
     case 'ping':
       msg.channel.send("Sprawdzam...").then((mess) => {mess.edit("Mój ping to: " + (Date.now() - msg.createdTimestamp))});
@@ -110,10 +108,7 @@ client.on('message', msg => {
       break;
     case 'npc':
       var msgContent = msg.content.substring('yui!npc '.length);
-      var commandXD = msgContent.split(' '), number = parseInt(commandXD[0]), who = commandXD.slice(1, number + 1),
-          what = commandXD.slice(1 + number), text = "", whoText = "";
-      who.forEach(arg => { whoText += arg + ' '; })
-      what.forEach(arg => { text += arg + ' '; })
+      var args = msgContent.split(' '), number = parseInt(args[0]), whoText = args.slice(1, number + 1).join(" "), text = args.slice(1 + number).join(" ");
       msg.channel.send(new Discord.RichEmbed().addField('NPC :', `\`\`\`${whoText}\`\`\``).addField('Czynność :', `\`\`\`${text}\`\`\``).setColor('RANDOM'));
       break;
     case 'place':
@@ -130,14 +125,13 @@ client.on('message', msg => {
       for(var x = 0; x < value; x++) {msg.channel.send('``` ```')}
       break;
     case 'translate':
-      var lang = command[1], textArray = command.slice(2), text = '';
-      textArray.forEach(arg => { text += arg + ' '; })
-      yandex.detect(text ,function(err, res) {
+      var lang = command[1], text = command.slice(2).join(" ");
+      yandex.detect(text , (err, res) => {
         var baseLang = res.lang;
-        yandex.translate(text, {from: baseLang, to: lang }, function(err, res) {
+        yandex.translate(text, {from: baseLang, to: lang }, (err, res) => {
           if(res.text == undefined){
             msg.channel.send(WrongLang);
-            return
+            return;
           }
           msg.channel.send(new Discord.RichEmbed().setTitle(`O to twój przetłumaczony text, ${memberN}`)
                            .addField('Język bazowy :', `\`${baseLang}\``, true).addField('Tekst bazowy :', `\`${text}\``, true).addBlankField()
@@ -150,7 +144,7 @@ client.on('message', msg => {
           sessionId = uuidV5(msg.author.avatarURL, uuidV5.URL);
       request.open("GET", `${process.env.DialogFlow}/demoQuery?q=${text}&sessionId=${sessionId}`, true);
       request.onload = function() { 
-        var responseText = JSON.parse(this.responseText).result.fulfillment.speech;
+        var responseText = this.responseText.result.fulfillment.speech;
         msg.channel.send(new Discord.RichEmbed().addField(`Odpowiedź dla ${memberN} :`, responseText).setColor('RANDOM'))
       }
       request.send();
@@ -161,16 +155,7 @@ client.on('message', msg => {
   }
   
 if(msg.author.id == '344048874656366592') {
-  var YuiGuildMember = msg.guild.members.find(member =>  member.id === '551414888199618561' )
-  if(msg.content.startsWith('yui!say')) {
-    if(YuiGuildMember.missingPermissions('MANAGE_MESSAGES')[0] != 'MANAGE_MESSAGES') {
-      text = msg.content.substring('yui!say '.length);
-      msg.channel.send(new Discord.RichEmbed().addField(':arrow_double_down: :arrow_double_down:', text)).then(msg.delete(0));
-    } else {
-      msg.channel.send(CantDelete);
-      return;
-    }
-  }
+  var YuiGuildMember = msg.guild.members.find(member =>  member.id === '551414888199618561')
   if(msg.content.startsWith('yui!command')){
     if(YuiGuildMember.missingPermissions('MANAGE_MESSAGES')[0] != 'MANAGE_MESSAGES') {
       text = msg.content.substring('yui!command '.length);
@@ -210,8 +195,7 @@ client.on('message', msg => {
 
 client.on('message', msg => {
   if(!msg.content.startsWith('yui!admin')) return '';
-  var msgContent = msg.content.substring('yui!admin '.length);
-  var command = msgContent.split(' ');
+  var command = msg.content.substring('yui!admin '.length).split(' ').filter(element => element);
   if(!(msg.member.missingPermissions('ADMINISTRATOR')[0] != 'ADMINISTRATOR')) {
         msg.channel.send(NoPerms);
         return;
@@ -258,6 +242,23 @@ client.on('message', msg => {
                          .setColor('RANDOM')
                          .setTitle('Aktualizacja ustawień')
                          .addField('Rola do automatycznego dawania :', `<@&${role}>`));
+      break;
+    case 'verify':
+      var role = msg.mentions.roles.first(), guildID = msg.guild.id;
+      if(role == null || role == undefined) {
+        Guilds.update({ "verifyEnabled": true, "verifyRoleId": role}, {where: { guildId: guildID }})
+        msg.channel.send(new Discord.RichEmbed()
+                         .setColor('RANDOM')
+                         .setTitle('Aktualizacja ustawień')
+                         .addField('Rola dawana po przejściu weryfikacji :', 'Przywrócono domyślne'));
+        return;
+      }
+      role = role.id;
+      Guilds.update({ "verifyEnabled": true, "verifyRoleId": role}, {where: {guildId: guildID }})
+      msg.channel.send(new Discord.RichEmbed()
+                         .setColor('RANDOM')
+                         .setTitle('Aktualizacja ustawień')
+                         .addField('Rola dawana po przejściu weryfikacji :', `<@&${role}>`));
       break;
   }
   Guilds.sync();

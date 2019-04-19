@@ -21,5 +21,12 @@ module.exports = {
   },
   autoroleId: {
     type: Sequelize.STRING,
-  }
+  },
+  verifyEnabled: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false
+  },
+  verifyRoleId: {
+    type: Sequelize.BOOLEAN,
+  },
 }
