@@ -8,6 +8,7 @@ var error = [new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField
             new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Chcesz mnie zabić?!?!'),
             new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Sorki! Ale nie mogę tutaj usuwać wiadomości...'),
             new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Sorki! Ale nie masz uprawnień do tego!'),
+            new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Zły język!'),
           ];
 
 module.exports = error;
