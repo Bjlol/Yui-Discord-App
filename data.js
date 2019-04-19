@@ -17,7 +17,8 @@ module.exports = [{
      "https://cdn.weeb.sh/images/Skv72TuPW.gif",
      "http://pa1.narvii.com/5604/f8cd0316b15b93c6ae1158bfbfbfddc3fd720909_hq.gif",
      "https://66.media.tumblr.com/5dbe18a0363c9e979cba48e25defbdcb/tumblr_nidloh81yS1u8ybn9o2_500.gif",
-     "https://media.tenor.com/images/26aaa1494b424854824019523c7ba631/tenor.gif"],
+     "https://media.tenor.com/images/26aaa1494b424854824019523c7ba631/tenor.gif",
+         "https://media.tenor.co/images/802f7fa791471c2e33dc06475d2b54c8/tenor.gif"],
 
 "slap" : ["https://media.giphy.com/media/jLeyZWgtwgr2U/giphy.gif",
      "https://media1.tenor.com/images/fb17a25b86d80e55ceb5153f08e79385/tenor.gif?itemid=7919028"],

@@ -8,6 +8,7 @@ const GuildBase = require('./guilds.js');
 const Errors = require('./errors.js');
 const database = require('./database.js');
 const yandex = require('yandex-translate')(process.env.YandexApiKey);
+const uuidV5 = require('uuid/v5');
 //Login to database
 
 database.authenticate().catch(err => console.error('Unable to connect to the database:', err));
@@ -29,15 +30,10 @@ var gif_hug = data.hug, gif_kiss = data.kiss, gif_slap = data.slap,
 
 //Errors
 var AirShip = Errors[0], NoMention = Errors[1], MentionSelf = Errors[2], WrongMention = Errors[3],
-    NoArg = Errors[4], KillMe = Errors[5], CantDelete = Errors[6], NoPerms = Errors[7];
+    NoArg = Errors[4], KillMe = Errors[5], CantDelete = Errors[6], NoPerms = Errors[7], WrongLang = Errors[8];
 app.listen(process.env.PORT);
 
 setInterval(() => http.get(`http://${process.env.PROJECT_DOMAIN}.glitch.me/`), 250000);
-
-setTimeout(function(){
-  console.log('App restart');
-  process.exit(0);
-}, 60 * 60 * 1000);
 
 //Discord Bot
 const Discord = require('discord.js');
@@ -69,6 +65,7 @@ client.on('guildMemberAdd', member => {
 client.on('message', msg => {
   var memberN = msg.member.nickname, randomNumber, answer;
   if(memberN === null) memberN = msg.author.username;
+  if(!(msg.content.startsWith('yui!'))) return;
   var command = msg.content.substring('yui!'.length).split(' ');
   
   switch(command[0]) {
@@ -126,12 +123,7 @@ client.on('message', msg => {
       break;
     case 'tabelka':
       var value = parseInt(command[1]);
-      if(value >= 50 && msg.author.id == '517068183102816268') {
-        msg.channel.send('MAMO! To boli...')
-        msg.channel.send('yui!cry').delete(0);
-        return;
-      }
-      if(value >= 50) {
+      if(value > 50) {
         msg.channel.send(KillMe);
         return;
       }
@@ -142,13 +134,30 @@ client.on('message', msg => {
       textArray.forEach(arg => { text += arg + ' '; })
       yandex.detect(text ,function(err, res) {
         var baseLang = res.lang;
-        yandex.translate('Siemanko!', {from: baseLang, to: lang }, function(err, res) {
+        yandex.translate(text, {from: baseLang, to: lang }, function(err, res) {
+          if(res.text == undefined){
+            msg.channel.send(WrongLang);
+            return
+          }
           msg.channel.send(new Discord.RichEmbed().setTitle(`O to twój przetłumaczony text, ${memberN}`)
-                           .addField('Język bazowy :', `\`${baseLang}\``, true).addField('Tekst bazowy :', `\`${text}\``, true)
+                           .addField('Język bazowy :', `\`${baseLang}\``, true).addField('Tekst bazowy :', `\`${text}\``, true).addBlankField()
                            .addField('Język docelowy :', `\`${lang}\``, true).addField('Tekst przetłumaczony', `\`${res.text[0]}\``, true).setColor('RANDOM'));
         });
       });
-      
+      break;
+    case 'assistant':
+      var request = new XMLHttpRequest(), text = msg.content.substring('yui!assistant '.length),
+          sessionId = uuidV5(msg.author.avatarURL, uuidV5.URL);
+      request.open("GET", `${process.env.DialogFlow}/demoQuery?q=${text}&sessionId=${sessionId}`, true);
+      request.onload = function() { 
+        var responseText = JSON.parse(this.responseText).result.fulfillment.speech;
+        msg.channel.send(new Discord.RichEmbed().addField(`Odpowiedź dla ${memberN} :`, responseText).setColor('RANDOM'))
+      }
+      request.send();
+      break;
+    case 'addme':
+      msg.channel.send('https://discordapp.com/api/oauth2/authorize?client_id=551414888199618561&scope=bot&permissions=8')
+      break;
   }
   
 if(msg.author.id == '344048874656366592') {
@@ -171,6 +180,11 @@ if(msg.author.id == '344048874656366592') {
       return;
     }
   }
+  if(msg.content.startsWith('yui!spam')) {
+    var num = command[1], textArray = command.slice(2), text = '', i = 0;
+    textArray.forEach(arg => { text += arg + ' '; })
+    for(i = 0; i < num; i++) {msg.channel.send(text);}
+  }
 }});
 
 client.on('message', msg => {
@@ -181,11 +195,11 @@ client.on('message', msg => {
      && !msg.author.bot || msg.content.startsWith('yui!help') ){
     var embed = new Discord.RichEmbed()
     .setColor('RANDOM')
-    .setTitle('Pomoc dla Yui! (Czyli mnie), wersja 1.6.1')
+    .setTitle('Pomoc dla Yui! (Czyli mnie), wersja 1.7')
     .addField('UWAGA!', 'Przed każdą komendą dodaj `yui!` chyba że jest napisane inaczej.')
-    .addField('For fun', '`ship`, `lenny`, `tabelka`')
+    .addField('For fun', '`ship`, `lenny`, `tabelka`, `translate`, `assistant`')
     .addField('Gify', '`giphy`,`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `kill`, `angry`, `smile`, `nani`, `ban`, `cat`')
-    .addField('Inne', '`servers`, `mess`')
+    .addField('Inne', '`servers`, `mess`, `addme`')
     .addField('Roleplay', '`ping`, `kostka`, `npc`')
     .addField('Wojownicy RP (Koty), prefix - `yui!wojownik`', '`poluj`')
     .addField('Komendy związane z SAO, prefix - `yui!sao`', '`sandwich`, `eat`, `run`')
