@@ -144,10 +144,8 @@ client.on('message', msg => {
           sessionId = uuidV5(msg.author.avatarURL, uuidV5.URL);
       request.open("GET", `${process.env.DialogFlow}/demoQuery?q=${text}&sessionId=${sessionId}`, true);
       request.onload = function() { 
-        //var responseText =
-        console.log(JSON.parse(this.responseText));
-        //.result.fulfillment.speech;
-        //msg.channel.send(new Discord.RichEmbed().addField(`Odpowiedź dla ${memberN} :`, responseText).setColor('RANDOM'))
+        var responseText = JSON.parse(this.responseText).result.fulfillment.speech;
+        msg.channel.send(new Discord.RichEmbed().addField(`Odpowiedź dla ${memberN} :`, responseText).setColor('RANDOM'))
       }
       request.send();
       break;
@@ -281,7 +279,7 @@ client.on('message', msg => {
   
   //Variables
   var gif, everyone = false, self = false, memberMentionedUser, memberMentionedName;
-  var command = msgContent.split(' ');
+  var command = msgContent.split(' ').filter(element => element);
   var memberUser = msg.member.nickname;
   if(memberUser === null) memberUser = msg.author.username;
   
@@ -514,9 +512,22 @@ client.on('message', msg => {
       }
     }
 }
-  
+   
   
 });
+
+client.on('message', msg => {
+  if(!(msg.content.startsWith('Ok Yui,'))) return;
+  var data = new Date(), hours = data.getHours() + 2;
+  if(hours > 23) { 
+    hours -= 23;
+  }
+  let text = msg.content.substring('Ok Yui,'.length);
+  if(text == 'która godzina?') {
+    msg.channel.send(`Jest godzina ${hours}:${data.getMinutes()}`)
+    return;
+  }
+})
 
 function createGifEmbed(title, gif) { return new Discord.RichEmbed().setTitle(title).setColor('RANDOM').setImage(gif); }
 function createGifEmbedWithColor(title, color, gif) { return new Discord.RichEmbed().setTitle(title).setColor(color).setImage(gif); }
