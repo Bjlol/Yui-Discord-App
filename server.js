@@ -279,7 +279,7 @@ client.on('message', msg => {
   
   //Variables
   var gif, everyone = false, self = false, memberMentionedUser, memberMentionedName;
-  var command = msgContent.split(' ');
+  var command = msgContent.split(' ').filter(element => element);
   var memberUser = msg.member.nickname;
   if(memberUser === null) memberUser = msg.author.username;
   
@@ -512,9 +512,22 @@ client.on('message', msg => {
       }
     }
 }
-  
+   
   
 });
+
+client.on('message', msg => {
+  if(!(msg.content.startsWith('Ok Yui,'))) return;
+  var data = new Date(), hours = data.getHours() + 2;
+  if(hours > 23) { 
+    hours -= 23;
+  }
+  let text = msg.content.substring('Ok Yui,'.length);
+  if(text == 'która godzina?') {
+    msg.channel.send(`Jest godzina ${hours}:${data.getMinutes()}`)
+    return;
+  }
+})
 
 function createGifEmbed(title, gif) { return new Discord.RichEmbed().setTitle(title).setColor('RANDOM').setImage(gif); }
 function createGifEmbedWithColor(title, color, gif) { return new Discord.RichEmbed().setTitle(title).setColor(color).setImage(gif); }
