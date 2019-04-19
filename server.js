@@ -144,8 +144,8 @@ client.on('message', msg => {
           sessionId = uuidV5(msg.author.avatarURL, uuidV5.URL);
       request.open("GET", `${process.env.DialogFlow}/demoQuery?q=${text}&sessionId=${sessionId}`, true);
       request.onload = function() { 
-        var responseTexty = JSON.parse(this.responseText).result.fulfillment.speech;
-        msg.channel.send(new Discord.RichEmbed().addField(`Odpowiedź dla ${memberN} :`, responseTexty).setColor('RANDOM'))
+        var responseText = this.responseText.result.fulfillment.speech;
+        msg.channel.send(new Discord.RichEmbed().addField(`Odpowiedź dla ${memberN} :`, responseText).setColor('RANDOM'))
       }
       request.send();
       break;
