@@ -44,7 +44,7 @@ var CryingYui = 'https://cdn.glitch.com/57f4b50a-0b6d-4097-963c-d1250b7bf4fd%2Fi
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
   client.user.setPresence({ game: { name: 'Chat', type: 'watching'}, status: 'online' });
-  client.guilds.array().forEach(guild => Guilds.findOrCreate({where: {guildId: guild.id}, defaults: { "welcomeEnabled": false, "autoroleEnabled": false }}));
+  client.guilds.array().forEach(guild => Guilds.findOrCreate({where: {guildId: guild.id}, defaults: { "welcomeEnabled": false, "autoroleEnabled": false, "verifyEnabled": false }}));
   Guilds.sync();
 });
 
