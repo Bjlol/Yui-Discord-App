@@ -32,8 +32,6 @@ var AirShip = Errors[0], NoMention = Errors[1], MentionSelf = Errors[2], WrongMe
     NoArg = Errors[4], KillMe = Errors[5], CantDelete = Errors[6], NoPerms = Errors[7], WrongLang = Errors[8];
 app.listen(process.env.PORT);
 
-setInterval(() => http.get(`http://${process.env.PROJECT_DOMAIN}.glitch.me/`), 250000);
-
 //Discord Bot
 const Discord = require('discord.js');
 const client = new Discord.Client();
