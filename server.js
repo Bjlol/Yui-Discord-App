@@ -1,62 +1,51 @@
-const http = require('http');
-const express = require('express');
-const app = express();
-const data = require('./data')[0];
-const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-const Sequelize = require('sequelize');
-const GuildBase = require('./guilds.js');
-const Errors = require('./errors.js');
-const database = require('./database.js');
-const yandex = require('yandex-translate')(process.env.YandexApiKey);
-const uuidV5 = require('uuid/v5');
+const express = require('express'), app = express();
+const Sequelize = require('sequelize'),
+      yandex = require('yandex-translate')(process.env.YandexApiKey),
+      uuidV5 = require('uuid/v5');
+const https = require('https');
+const data = require('./data'), GuildBase = require('./guilds.js')[0], Errors = require('./errors.js'),
+      database = require('./database.js'), guildsDefaults = require('./guilds.js')[1], commands = require('./commands.js');
 
-//Login to database
+//Login to database then defining table
 database.authenticate().catch(err => console.error('Unable to connect to the database:', err));
-
-//Creating table 'Guilds' & syncing
 const Guilds = database.define('Guilds', GuildBase);
 
-app.get('/data', (req, res) => res.send(data));
+//Page requests
 app.get("/", (request, response) => response.send('Yui is up and running in the 90\'s'));
+setInterval(() => https.get(`https://${process.env.PROJECT_DOMAIN}.glitch.me/`), 250000);
+app.listen(process.env.PORT);
 
-//Gif base
+var commandList = data.commands;
+
+//Gif & anwsers base
 var gif_hug = data.hug, gif_kiss = data.kiss, gif_slap = data.slap,
     gif_cry = data.cry, gif_pat = data.pat, gif_cheer = data.cheer,
     gif_kill_self = data.kill_self, gif_kill_other = data.kill_other, gif_angry = data.angry,
     gif_smile = data.smile, gif_nani = data.nani, gif_sao_sandwich = data.sao_sandwich,
     gif_sao_run = data.sao_run, gif_ban = data.ban, gif_sao_eat = data.sao_eat,
-    answer_wojownik = data.wojownik_poluj, gif_cookie = data.cookie, ships = data.ship;
+    answer_wojownik = data.wojownik_poluj, gif_cookie = data.cookie, ships = data.ship,
+    CryingYui = 'https://cdn.glitch.com/57f4b50a-0b6d-4097-963c-d1250b7bf4fd%2Fimage.png?1553974767652';
 
 //Errors
 var AirShip = Errors[0], NoMention = Errors[1], MentionSelf = Errors[2], WrongMention = Errors[3],
     NoArg = Errors[4], KillMe = Errors[5], CantDelete = Errors[6], NoPerms = Errors[7], WrongLang = Errors[8];
-app.listen(process.env.PORT);
-
-setInterval(() => http.get(`http://${process.env.PROJECT_DOMAIN}.glitch.me/`), 250000);
 
 //Discord Bot
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
-var CryingYui = 'https://cdn.glitch.com/57f4b50a-0b6d-4097-963c-d1250b7bf4fd%2Fimage.png?1553974767652';
-
 //Events
 client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
   client.user.setPresence({ game: { name: 'Chat', type: 'watching'}, status: 'online' });
-  client.guilds.array().forEach(guild => Guilds.findOrCreate({where: {guildId: guild.id}, defaults: { "welcomeEnabled": false, "autoroleEnabled": false, "verifyEnabled": false }}));
+  client.guilds.array().forEach(guild => Guilds.findOrCreate({ where: {guildId: guild.id}, defaults: guildsDefaults}));
   Guilds.sync();
+  console.log('Logged & synced');
 });
 
 client.on('guildMemberAdd', member => {
   Guilds.findOne({where : {guildId: member.guild.id} }).then(base => {
-    if(base.welcomeEnabled) {
-      var channelToSend = member.guild.channels.find(channel => channel.id == base.welcomeChannel);
-      var message = base.welcomeMessage
-        .replace('<el>', 'ł').replace('<a>', 'ą').replace('<ci>', 'ć').replace('<e>', 'ę')
-        .replace('<ni>', 'ń').replace('<si>', 'ś').replace('<o>', 'ó').replace('<MEMBER>', `<@${member.id}>`)
-      channelToSend.send(message);
-    }
+    if(base.welcomeEnabled) member.guild.channels.find(channel => channel.id == base.welcomeChannel)
+      .send(decodeURI(base.welcomeMessage).replace('<MEMBER>', `<@${member.id}>`));
     if(base.autoroleEnabled) member.addRole(member.guild.roles.find(role => role.id == base.autoroleId));
   })
 })
@@ -66,22 +55,23 @@ client.on('message', msg => {
   if(memberN === null) memberN = msg.author.username;
   if(!(msg.content.startsWith('yui!'))) return;
   var command = msg.content.substring('yui!'.length).split(' ').filter(element => element);
+  if(commandList.indexOf(command[0]) === -1) return;
   
   switch(command[0]) {
     case 'kostka':
       randomNumber = genRandom(7);
       if(randomNumber == 0) randomNumber += 1; 
-      msg.channel.send(new Discord.RichEmbed().setTitle('Witaj ' + memberN).setColor('RANDOM').addField('Rzuciłeś kostką!', 'Wyrzuciłeś `' + randomNumber + '`'));
+      msg.channel.send(createGifEmbed('Witaj ' + memberN, null).addField('Rzuciłeś kostką!', 'Wyrzuciłeś `' + randomNumber + '`'));
       break;
     case 'ping':
-      msg.channel.send("Sprawdzam...").then((mess) => {mess.edit("Mój ping to: " + (Date.now() - msg.createdTimestamp))});
+      msg.channel.send("Pong! Poczekaj chwilkę...").then((mess) => {mess.edit("Mój ping to: " + (Date.now() - msg.createdTimestamp))});
       break;
     case 'ship':
       if(command[1] === undefined || command[2] === undefined) {
         msg.channel.send(AirShip);
         return;
       }
-      randomNumber = (process.env.SECRET.length * command[1].length * toBin(command[2])) % 100;
+      randomNumber = (process.env.SECRET.length * command[1].length * command[2].length) % 100;
       if(command[1] == 'Kirito' && command[2] == 'Asuna' || command[2] == 'Kirito' && command[1] == 'Asuna') randomNumber = 100;
       if(randomNumber >= 0 && randomNumber < 20) answer = ships[0];
       if(randomNumber >= 20 && randomNumber < 40) answer = ships[1];
@@ -152,6 +142,9 @@ client.on('message', msg => {
     case 'addme':
       msg.channel.send('https://discordapp.com/api/oauth2/authorize?client_id=551414888199618561&scope=bot&permissions=8')
       break;
+    case 'verify':
+      msg.channel.send('Sorki ale nad tym pracuję!')
+      break;
   }
   
 if(msg.author.id == '344048874656366592') {
@@ -167,7 +160,7 @@ if(msg.author.id == '344048874656366592') {
   }
   if(msg.content.startsWith('yui!spam')) {
     var num = command[1], textArray = command.slice(2), text = '', i = 0;
-    textArray.forEach(arg => { text += arg + ' '; })
+    text = textArray.join(' ')
     for(i = 0; i < num; i++) {msg.channel.send(text);}
   }
 }});
@@ -186,9 +179,10 @@ client.on('message', msg => {
     .addField('Gify', '`giphy`,`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `kill`, `angry`, `smile`, `nani`, `ban`, `cat`')
     .addField('Inne', '`servers`, `mess`, `addme`')
     .addField('Roleplay', '`ping`, `kostka`, `npc`')
-    .addField('Wojownicy RP (Koty), prefix - `yui!wojownik`', '`poluj`')
-    .addField('Komendy związane z SAO, prefix - `yui!sao`', '`sandwich`, `eat`, `run`')
-    .addField('Administracyjne : prefix - `yui!admin`', '`welcome`, `autorole`');
+    //.addField('Wojownicy RP (Koty), prefix - `yui!wojownik`', '`poluj`')
+    //.addField('Komendy związane z SAO, prefix - `yui!sao`', '`sandwich`, `eat`, `run`')
+    .addField('Administracyjne : prefix - `yui!admin`', '`welcome`, `autorole`')
+    .addField('Output komendy :', '`[argument]` - nie wymagany, `<argument>` - wymagany');
     msg.channel.send(embed);
   }
 });
@@ -200,65 +194,43 @@ client.on('message', msg => {
         msg.channel.send(NoPerms);
         return;
   }
+  var guildID = msg.channel.guild.id;
   switch(command[0]) {
     case 'welcome':
-      var guildID = msg.channel.guild.id;
       if(command[2] == null || command[2] == undefined) {
-        msg.channel.send(new Discord.RichEmbed()
-                         .setColor('RANDOM')
-                         .setTitle('Aktualizacja ustawień')
-                         .addField('Kanał do wysyłania wiadomości :', 'Przywrócono domyślne')
-                         .addField('Wiadomość :', 'Przywrocono domyślne'));
+        msg.channel.send(new Discord.RichEmbed().setColor('RANDOM').setTitle('Aktualizacja ustawień')
+                         .addField('Kanał do wysyłania wiadomości :', 'Przywrócono domyślne').addField('Wiadomość :', 'Przywrocono domyślne'));
         Guilds.update({ "welcomeEnabled": false, "welcomeChannel": null, "welcomeMessage": null}, { where: { guildId: guildID }})
         return;
       }
       var channel = msg.mentions.channels.first().id, messageArray = command.slice(2), message = '';
-      messageArray.forEach(fragment => { message += fragment + ' '; })
-      msg.channel.send(new Discord.RichEmbed()
-                         .setColor('RANDOM')
-                         .setTitle('Aktualizacja ustawień')
-                         .addField('Kanał do wysyłania wiadomości :', `<#${channel}>`)
-                         .addField('Wiadomość :', message));
-      message = message.replace('ł', '<el>').replace('ą', '<a>')
-        .replace('ć', '<ci>').replace('ę', '<e>')
-        .replace('ń', '<ni>').replace('ś', '<si>')
-        .replace('ó', '<o>')
+      message = messageArray.join(' ')
+      msg.channel.send(new Discord.RichEmbed().setColor('RANDOM').setTitle('Aktualizacja ustawień')
+                         .addField('Kanał do wysyłania wiadomości :', `<#${channel}>`).addField('Wiadomość :', message));
+      message = encodeURI(message);
       Guilds.update({ "welcomeEnabled": true, "welcomeChannel": channel, "welcomeMessage": message}, {where: { guildId: guildID } });
-      Guilds.sync();
       break;
     case 'autorole':
-      var role = msg.mentions.roles.first(), guildID = msg.guild.id;
+      var role = msg.mentions.roles.first();
       if(role == null || role == undefined) {
         Guilds.update({ "autoroleEnabled": false, "autoroleId": null}, {where: { guildId: guildID }})
-        msg.channel.send(new Discord.RichEmbed()
-                         .setColor('RANDOM')
-                         .setTitle('Aktualizacja ustawień')
+        msg.channel.send(new Discord.RichEmbed().setColor('RANDOM').setTitle('Aktualizacja ustawień')
                          .addField('Rola do automatycznego dawania :', 'Przywrócono domyślne'));
         return;
       }
-      role = role.id;
-      Guilds.update({ "autoroleEnabled": true, "autoroleId": role}, {where: {guildId: guildID }})
-      msg.channel.send(new Discord.RichEmbed()
-                         .setColor('RANDOM')
-                         .setTitle('Aktualizacja ustawień')
-                         .addField('Rola do automatycznego dawania :', `<@&${role}>`));
+      Guilds.update({ "autoroleEnabled": true, "autoroleId": role.id}, {where: {guildId: guildID }})
+      msg.channel.send(new Discord.RichEmbed().setColor('RANDOM').setTitle('Aktualizacja ustawień').addField('Rola do automatycznego dawania :', `<@&${role}>`));
       break;
     case 'verify':
-      var role = msg.mentions.roles.first(), guildID = msg.guild.id;
+      var role = msg.mentions.roles.first();
       if(role == null || role == undefined) {
-        Guilds.update({ "verifyEnabled": true, "verifyRoleId": role}, {where: { guildId: guildID }})
-        msg.channel.send(new Discord.RichEmbed()
-                         .setColor('RANDOM')
-                         .setTitle('Aktualizacja ustawień')
+        Guilds.update({ "verifyEnabled": false, "verifyRoleId": role}, {where: { guildId: guildID }})
+        msg.channel.send(new Discord.RichEmbed().setColor('RANDOM').setTitle('Aktualizacja ustawień')
                          .addField('Rola dawana po przejściu weryfikacji :', 'Przywrócono domyślne'));
         return;
       }
-      role = role.id;
-      Guilds.update({ "verifyEnabled": true, "verifyRoleId": role}, {where: {guildId: guildID }})
-      msg.channel.send(new Discord.RichEmbed()
-                         .setColor('RANDOM')
-                         .setTitle('Aktualizacja ustawień')
-                         .addField('Rola dawana po przejściu weryfikacji :', `<@&${role}>`));
+      Guilds.update({ "verifyEnabled": true, "verifyRoleId": role.id}, {where: {guildId: guildID }})
+      msg.channel.send(new Discord.RichEmbed().setColor('RANDOM').setTitle('Aktualizacja ustawień').addField('Rola dawana po przejściu weryfikacji :', `<@&${role}>`));
       break;
   }
   Guilds.sync();
@@ -266,251 +238,104 @@ client.on('message', msg => {
 //Reakcje, gify i słodkie rzeczy.
 
 client.on('message', msg => {
-  if(!msg.content.startsWith('yui!')) return '';
-  var msgContent = msg.content.substring('yui!'.length);
-  if(!(msgContent.startsWith('slap') || msgContent.startsWith('kiss') ||
-     msgContent.startsWith('hug') || msgContent.startsWith('cry') ||
-     msgContent.startsWith('pat') || msgContent.startsWith('cheer') ||
-     msgContent.startsWith('cookie') || msgContent.startsWith('kill') ||
-     msgContent.startsWith('sao') || msgContent.startsWith('nani') ||
-     msgContent.startsWith('smile') || msgContent.startsWith('angry') ||
-     msgContent.startsWith('wojownik') || msgContent.startsWith('cat') ||
-     msgContent.startsWith('giphy') || msgContent.startsWith('ban'))) return;
+  if(!(msg.content.startsWith('yui!'))) return;
+  var command = msg.content.substring('yui!'.length).split(' ').filter(element => element);
+  if(commandList.indexOf(command[0]) === -1) return;
   
   //Variables
-  var gif, everyone = false, self = false, memberMentionedUser, memberMentionedName;
-  var command = msgContent.split(' ').filter(element => element);
+  var everyone = false, self = false, memberMentionedName;
   var memberUser = msg.member.nickname;
   if(memberUser === null) memberUser = msg.author.username;
+  let mention = AllOrOneOrAlone(msg.mentions);
   
-  memberMentionedUser = msg.mentions.members.first();
-  var mentionType = AllOrOneOrAlone(msg.mentions);
-  
-  if (mentionType == 'E') everyone = true;
-  if (mentionType == 'O') {
-    memberMentionedName = memberMentionedUser.nickname;
-    if(memberMentionedName == null) memberMentionedName = memberMentionedUser.user.username;
-    if(memberMentionedName == memberUser) {
-      msg.channel.send(MentionSelf);
-      return;
-    }
+  if(mention.everyone) everyone = true;
+  if(mention.member) {
+    memberMentionedName = msg.mentions.members.first().nickname;
+    if(memberMentionedName == null) memberMentionedName = msg.mentions.members.first().user.username;
   }
-  if (mentionType == 'S') self = true;
-  
+  if(mention.self) self = true;
+    
   switch(command[0]) {
   case 'giphy':
-    if(mentionType != 'S') {
-      msg.channel.send(WrongMention);
-    } else {
-      var request = new XMLHttpRequest(), imageUrl = '';
-      request.open("GET", `http://api.giphy.com/v1/gifs/random?tag=${command[1]}&api_key=${process.env.GiphyApiKey}`, true);
-      request.onload = function() {
-        imageUrl = JSON.parse(this.responseText).data.images.original.url;
-        msg.channel.send(createGifEmbed(`O to gif dla ciebie, ${memberUser}`, imageUrl));
-      }
-      request.send();
-    }
+    if(!self) msg.channel.send(commands.command.giphy.notSelf);
+    else https.get(`https://api.giphy.com/v1/gifs/random?tag=${command[1]}&api_key=${process.env.GiphyApiKey}`, response => {
+          let responseText = '';
+          response.on('data', chunk => { if (chunk) responseText += chunk; })
+          response.on('end', () => { msg.channel.send(createGifEmbed(`O to gif dla ciebie, ${memberUser}`, JSON.parse(responseText).data.images.original.url)); })
+         })
     break;
   case 'ban':
-    if(mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_ban[genRandom(gif_ban.length)]
-      msg.channel.send(createGifEmbed(`${memberUser} : Zbanujmy ${memberMentionedName}!`, gif))
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('ban'));
+    else msg.channel.send(createGifEmbed(`${memberUser} : Zbanujmy ${memberMentionedName}!`, gif_ban[genRandom(gif_ban.length)]));
     break;
   case 'kiss':
-    if(mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_kiss[genRandom(gif_kiss.length)]
-      msg.channel.send(createGifEmbed(`${memberMentionedName} został pocałowany przez ${memberUser}`, gif));
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('kiss'));
+    else msg.channel.send(createGifEmbed(`${memberMentionedName} został pocałowany przez ${memberUser}`, gif_kiss[genRandom(gif_kiss.length)]));
+    break;
   case 'hug':
-    if (mentionType != 'O') { 
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_hug[genRandom(gif_hug.length)];
-      msg.channel.send(createGifEmbed(`${memberMentionedName} został przytulony przez ${memberUser}`, gif));
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('hug'));
+    else msg.channel.send(createGifEmbed(`${memberMentionedName} został przytulony przez ${memberUser}`, gif_hug[genRandom(gif_hug.length)]));
+    break;
   case 'slap':
-    if (mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      if(memberMentionedUser.id == '344048874656366592') {
-        if(msg.author.id != '517068183102816268') {
-        msg.channel.send(createGifEmbed('Nie pozwole skrzywdzić mojego tatusia!', CryingYui));
-        return;
-        }
-      }
-      // Nie zmieniaj bo stracisz Meganke.
-      if(memberMentionedUser.id == '517068183102816268') {
-        msg.channel.send(createGifEmbed('Nie pozwole skrzywdzić mojej mamusi!', CryingYui));
-        return;
-      }
-        gif = gif_slap[genRandom(gif_slap.length)];
-        msg.channel.send(createGifEmbed(`${memberMentionedName} został uderzony przez ${memberUser}`, gif));
-      
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('slap'));
+    else msg.channel.send(createGifEmbed(`${memberMentionedName} został uderzony przez ${memberUser}`, gif_slap[genRandom(gif_slap.length)]));
+    break;
   case 'cry':
-    if (mentionType == 'E') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_cry[genRandom(gif_cry.length)];
-      if(self) {
-        msg.channel.send(createGifEmbed(`${memberUser} płacze`, gif));
-      } else {
-        msg.channel.send(createGifEmbed(`${memberUser} płacze przez ${memberMentionedName}`, gif));
-      }
-      break;
+    if (everyone) msg.channel.send(commands.command.cry.notEveryone);
+    else {
+      if(self) msg.channel.send(createGifEmbed(`${memberUser} płacze`, gif_cry[genRandom(gif_cry.length)]));
+      else msg.channel.send(createGifEmbed(`${memberUser} płacze przez ${memberMentionedName}`, gif_cry[genRandom(gif_cry.length)]));
     }
+    break;
   case 'cheer': 
-    if (mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_cheer[genRandom(gif_cheer.length)];
-      msg.channel.send(createGifEmbed(`${memberUser} pociesza ${memberMentionedName}!`, gif));
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('cheer')); 
+    else msg.channel.send(createGifEmbed(`${memberUser} pociesza ${memberMentionedName}!`, gif_cheer[genRandom(gif_cheer.length)]));
+    break;
   case 'pat':
-    if (mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_pat[genRandom(gif_pat.length)];
-      msg.channel.send(createGifEmbed(`${memberUser} glaszcze ${memberMentionedName}`, gif));
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('pat'));
+    else msg.channel.send(createGifEmbed(`${memberUser} glaszcze ${memberMentionedName}`, gif_pat[genRandom(gif_pat.length)]));
+    break;
   case 'kill':
-    if(mentionType == 'E') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      if(mentionType == 'O') {
-      if(memberMentionedUser.id == '344048874656366592') {
-        if(msg.author.id != '517068183102816268') {
-        msg.channel.send(createGifEmbed('Nie pozwole skrzywdzić mojego tatusia!', CryingYui));
-        return;
-        }
-      }
-      // Nie zmieniaj bo stracisz Meganke.
-      if(memberMentionedUser.id == '517068183102816268') {
-          msg.channel.send(createGifEmbed('Nie pozwole skrzywdzić mojej mamusi!', CryingYui));
-          return;
-      }
-      gif = gif_kill_other[genRandom(gif_kill_other.length)];
-      msg.channel.send(createGifEmbedWithColor(`${memberUser} zabija ${memberMentionedName}...`, 'RED', gif));
-    } else {
-      if(self) {
-        gif = gif_kill_self[genRandom(gif_kill_self.length)];
-        msg.channel.send(createGifEmbedWithColor(`${memberUser} popełnia samobójstwo...`, 'RED', gif));
-      }
+    if(everyone) msg.channel.send(commands.command.kill.notEveryone);
+      else {
+      if(self) msg.channel.send(createGifEmbedWithColor(`${memberUser} popełnia samobójstwo...`, 'RED', gif_kill_self[genRandom(gif_kill_self.length)]));
+      else msg.channel.send(createGifEmbedWithColor(`${memberUser} zabija ${memberMentionedName}...`, 'RED', gif_kill_other[genRandom(gif_kill_other.length)]));
     }
-  }
     break;
   case 'angry':
-    if(mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_angry[genRandom(gif_angry.length)];
-      msg.channel.send(createGifEmbed(`${memberUser} jest zly na ${memberMentionedName}`, gif));
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('angry'));
+    else msg.channel.send(createGifEmbed(`${memberUser} jest zly na ${memberMentionedName}`, gif_angry[genRandom(gif_angry.length)]));
+    break;
   case 'smile':
-    if(mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_smile[genRandom(gif_smile.length)];
-      msg.channel.send(createGifEmbed(`${memberUser} uśmiechnął się do ${memberMentionedName}`, gif));
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('smile'));
+    else msg.channel.send(createGifEmbed(`${memberUser} uśmiechnął się do ${memberMentionedName}`, gif_smile[genRandom(gif_smile.length)]));
+    break;
   case 'nani':
-    if(mentionType != 'O') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      gif = gif_nani[genRandom(gif_nani.length)];
-      msg.channel.send(createGifEmbed(`${memberMentionedName} COOOO?`, gif));
-      break;
-    }
+    if(!(mention.member)) msg.channel.send(commands.command.notOther('nani'));
+    else msg.channel.send(createGifEmbed(`${memberMentionedName} COOOO?`, gif_nani[genRandom(gif_nani.length)]));
+    break;
   case 'cookie':
-    if(mentionType == 'S') {
-      msg.channel.send(WrongMention);
-      return;
-    }
-    if (everyone) {
-      gif = gif_cookie[genRandom(gif_cookie.length)];
-      msg.channel.send(createGifEmbed('Ciasteczka dla wszystkich!', gif));
-      break;
-    } else {
-      msg.channel.send(createGifEmbed("", null)
-        .addField(`${memberMentionedName} dostal ciasteczko od ${memberUser}`,
-          'UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ :cookie:'))
-      break;
-    }
-  case 'cat':
-    if(mentionType != 'S') {
-      msg.channel.send(WrongMention);
-      return;
-    } else {
-      var request = new XMLHttpRequest(), imageUrl = '';
-      request.open("GET", "https://api.thecatapi.com/v1/images/search?order=RANDOM&limit=1", true);
-      request.onload = function() { 
-        imageUrl = JSON.parse(this.responseText)[0].url;
-        msg.channel.send(createGifEmbed(`O to koteczek dla ciebie, ${memberUser}`, imageUrl));
-      }
-      request.setRequestHeader('x-api-key', process.env.CatApiKey);
-      request.send();
-    }
-  case 'sao':
-    if (command[1] == 'sandwich' || command[1] == 'run') {
-      if(mentionType != 'O') {
-        msg.channel.send(WrongMention);
-        return;
-      } else {
-        switch(command[1]) {
-          case 'sandwich':
-            gif = gif_sao_sandwich[genRandom(gif_sao_sandwich.length)];
-            msg.channel.send(createGifEmbed(`${memberMentionedName} dostal kanapke od ${memberUser}`, gif));
-            break;
-          case 'run':
-            gif = gif_sao_run[genRandom(gif_sao_run.length)];
-            msg.channel.send(createGifEmbed(`${memberUser} ucieka od ${memberMentionedName}`, gif));
-            break;
-        }
-      }
-    }
-    if (command[1] == 'eat') {
-      if (mentionType != 'S') {
-        msg.channel.send(WrongMention);
-        return;
-      } else {
-        gif = gif_sao_eat[genRandom(gif_sao_eat.length)];
-        msg.channel.send(createGifEmbed(`${memberUser} je jedzonko`, gif));
-      }
+    if(self) msg.channel.send(commands.command.cookie.notSelf);
+    else {
+      if (everyone) msg.channel.send(createGifEmbed('Ciasteczka dla wszystkich!', gif_cookie[genRandom(gif_cookie.length)]));
+      else msg.channel.send(createGifEmbed("", null).addField(`${memberMentionedName} dostal ciasteczko od ${memberUser}`, 'UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ :cookie:'));
     }
     break;
-  case 'wojownik':
-    if (command[1] == 'poluj') {
-      if (mentionType != 'S') {
-        msg.channel.send(WrongMention);
-        return;
-      } else {
-        var odp = answer_wojownik[genRandom(answer_wojownik.length)];
-        msg.channel.send(createGifEmbed("", null).addField(`${memberUser} upolował... *Werble proszę*`, odp))
+  case 'cat':
+    if(!self) msg.channel.send(commands.command.cat.notSelf);
+    else {
+      let headers = {
+        hostname: "api.thecatapi.com",
+        path: "/v1/images/search?order=RANDOM&limit=1",
+        headers: { 'x-api-key': process.env.CatApiKey }
       }
+      https.get(headers, response => {
+        let responseText = '';
+        response.on('data', chunk => { if (chunk) responseText += chunk; })
+        response.on('end', () => { msg.channel.send(createGifEmbed(`O to koteczek dla ciebie, ${memberUser}`, JSON.parse(responseText)[0].url)); })
+      })
     }
+    break;
 }
    
   
@@ -518,14 +343,20 @@ client.on('message', msg => {
 
 client.on('message', msg => {
   if(!(msg.content.startsWith('Ok Yui,'))) return;
-  var data = new Date(), hours = data.getHours() + 2;
-  if(hours > 23) { 
-    hours -= 23;
-  }
-  let text = msg.content.substring('Ok Yui,'.length);
+  var data = new Date(), hours = data.getHours() + 2, minutes = data.getMinutes();
+  if(hours > 23) hours -= 24;
+  if(minutes < 10) minutes = '0' + minutes;
+  let text = msg.content.substring('Ok Yui, '.length);
   if(text == 'która godzina?') {
-    msg.channel.send(`Jest godzina ${hours}:${data.getMinutes()}`)
+    msg.channel.send(`Jest godzina ${hours}:${minutes}`)
     return;
+  }
+})
+
+client.on('message', msg => {
+  if(msg.content.toLowerCase().includes('Kirito x Klein'.toLowerCase())) {
+    msg.channel.send('yui!cry');
+    msg.delete(0);
   }
 })
 
@@ -535,29 +366,10 @@ function createGifEmbedWithColor(title, color, gif) { return new Discord.RichEmb
 client.login(process.env.SECRET);
 
 function genRandom(num) { return Math.floor(Math.random() * num); }
-
-function toBin(string) { 
-  var bin = 0, i;
-  for(i = 0; i < string.length; i++) bin += string[i].charCodeAt(0).toString(2);
-  return bin;
-}
-
 function AllOrOneOrAlone(mentions) {
-  var memberMentioned = mentions.members.first()
-  var number = 2;
-
-  if (mentions.everyone) number = 0;
-  if (memberMentioned != undefined) number = 1;
-
-  switch (number) {
-      case 0 :
-        return 'E';
-        break;
-      case 1 :
-        return 'O';
-        break;
-      case 2 :
-        return 'S';
-        break;
+  return {
+    "everyone": mentions.everyone,
+    "member": mentions.members.first() != undefined,
+    "self": !(mentions.members.first() != undefined || mentions.everyone)
   }
 }

@@ -1,4 +1,12 @@
-module.exports = [{
+module.exports = {
+  
+"commands": ['ship', 'lenny', 'assistant', 'tabelka', 'translate', 'giphy','kiss','hug', 'slap', 'cookie', 'cry', 'cheer', 'pat', 'kill', 'angry', 'smile',
+             'nani', 'ban', 'cat', 'servers', 'mess', 'addme', 'ping', 'kostka', 'npc', 'verify', 'spam', 'command'],
+"warriors_commands": ['poluj'],
+  
+"sao_commands": ['sandwich', 'eat', 'run'],
+  
+"admin_commands": ['autorole', 'verify', 'welcome'],
 
 "ship": ["Słabo coś...", "Lepiej ale wciąż słabe...", "Coś tu mi nie pasuje", "Podoba mi się!", "Halyna dawej szampana!"],
   
@@ -79,4 +87,4 @@ module.exports = [{
             "UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ Złapałeś średnią mysz", "UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ Złapałeś tłuściutką mysz",
             "UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ Upolowałeś wronę!", "UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ Upolowałeś srokę!",
             "UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ Masz wróbla", "UwU (ﾉ◕ヮ◕)ﾉ*:･ﾟ Złapałeś królika"]
-}]
+}
