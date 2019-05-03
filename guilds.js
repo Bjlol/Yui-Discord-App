@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 
-module.exports = {
+module.exports = [{
   guildId: {
     type: Sequelize.STRING,
     allowNull: false
@@ -29,4 +29,8 @@ module.exports = {
   verifyRoleId: {
     type: Sequelize.BOOLEAN,
   },
-}
+}, {
+  "welcomeEnabled": false,
+  "autoroleEnabled": false,
+  "verifyEnabled": false,
+},]
