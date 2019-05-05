@@ -2,17 +2,19 @@ let errors = require('./../errors.js')
 
 module.exports = {
     name: "translate",
-    execute: (msg, args, yandex) => {
-        yandex.detect(text, (_err, res) => {
+    execute: (msg, args, yandex, Discord) => {
+        var memberN = msg.member.nickname;
+        if (memberN === null) memberN = msg.author.username;
+        yandex.detect(args[1], (_err, res) => {
             var baseLang = res.lang;
-            yandex.translate(text, { from: baseLang, to: args[0] }, (_err, res) => {
+            yandex.translate(args[1], { from: baseLang, to: args[0] }, (_err, res) => {
                 if (res.text == undefined) {
                     msg.channel.send(errors.WrongLang);
                     return;
                 }
-                msg.channel.send(new Discord.RichEmbed().setTitle(`O to twój przet³umaczony text, ${memberN}`)
-                    .addField('Jêzyk bazowy :', `\`${baseLang}\``, true).addField('Tekst bazowy :', `\`${args[1]}\``, true).addBlankField()
-                    .addField('Jêzyk docelowy :', `\`${args[0]}\``, true).addField('Tekst przet³umaczony', `\`${res.text[0]}\``, true).setColor('RANDOM'));
+                msg.channel.send(new Discord.RichEmbed().setTitle(`O to twÃ³j przetÅ‚umaczony text, ${memberN}`)
+                    .addField('JÄ™zyk bazowy :', `\`${baseLang}\``, true).addField('Tekst bazowy :', `\`${args[1]}\``, true).addBlankField()
+                    .addField('JÄ™zyk docelowy :', `\`${args[0]}\``, true).addField('Tekst przetÅ‚umaczony', `\`${res.text[0]}\``, true).setColor('RANDOM'));
             });
         });
     }
