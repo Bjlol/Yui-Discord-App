@@ -54,7 +54,6 @@ client.on('message', msg => {
   if(memberN === null) memberN = msg.author.username;
   if(!(msg.content.startsWith('yui!'))) return;
   var command = msg.content.substring('yui!'.length).split(' ').filter(element => element);
-  if(commandList.indexOf(command[0]) === -1) return;
   
   switch(command[0]) {
       case 'dice':
@@ -64,19 +63,19 @@ client.on('message', msg => {
           client.commands.get('ping').execute(msg);
           break;
       case 'ship':
-          client.commands.get('ship').execute(msg, [command[0], command[1]]);
+          client.commands.get('ship').execute(msg, [command[0], command[1]], ships);
           break;
       case 'lenny':
-          client.commands.get('lenny').execute(msg);
+          client.commands.get('lenny').execute(msg, Discord);
           break;
       case 'servers':
           client.commands.get('servers').execute(msg, Discord);
           break;
       case 'npc':
-          client.commands.get('npc').execute(msg);
+          client.commands.get('npc').execute(msg, Discord);
           break;
       case 'place':
-          client.commands.get('place').execute(msg);
+          client.commands.get('place').execute(msg, Discord);
           break;
       case 'tabelka':
           var value = parseInt(command[1]);
@@ -84,7 +83,7 @@ client.on('message', msg => {
           break;
       case 'translate':
           var lang = command[1], text = command.slice(2).join(" ");
-          client.commands.get('translate').execute(msg, [lang, text], yandex);
+          client.commands.get('translate').execute(msg, [lang, text], yandex, Discord);
           break;
       case 'assistant':
           client.commands.get('assistant').execute(msg, Discord, https)
@@ -131,7 +130,7 @@ client.on('message', msg => {
   if(!msg.content.startsWith('yui!admin')) return '';
   var command = msg.content.substring('yui!admin '.length).split(' ').filter(element => element);
   if(!(msg.member.missingPermissions('ADMINISTRATOR')[0] != 'ADMINISTRATOR')) {
-        msg.channel.send(NoPerms);
+        msg.channel.send(Errors.NoPerms);
         return;
   }
   var guildID = msg.channel.guild.id;
@@ -180,7 +179,6 @@ client.on('message', msg => {
 client.on('message', msg => {
   if(!(msg.content.startsWith('yui!'))) return;
   var command = msg.content.substring('yui!'.length).split(' ').filter(element => element);
-  if(commandList.indexOf(command[0]) === -1) return;
     
   //Variables
   var everyone = false, self = false, memberMentionedName;
@@ -191,7 +189,7 @@ client.on('message', msg => {
   if(mention.everyone) everyone = true;
   if(mention.member) {
     if(msg.author.id == msg.mentions.members.first().id) {
-      msg.channel.send(MentionSelf)
+      msg.channel.send(Errors.MentionSelf)
       return;
     }
     memberMentionedName = msg.mentions.members.first().nickname;

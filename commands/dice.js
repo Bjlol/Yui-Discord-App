@@ -5,6 +5,6 @@ module.exports = {
         let number = Math.floor(Math.random() * (+max - +min)) + +min;
         var memberN = msg.member.nickname;
         if (memberN === null) memberN = msg.author.username;
-        msg.channel.send(new discord.RichEmbed().setTitle('Witaj ' + memberN).setColor('RANDOM').addField('Rzuci≥eú kostkπ!', `Wyrzuci≥eú ${number}`))
+        msg.channel.send(new discord.RichEmbed().setTitle('Witaj ' + memberN).setColor('RANDOM').addField('Rzuci≈Çe≈õ kostkƒÖ!', `Wyrzuci≈Çe≈õ ${number}`))
     }
 }
