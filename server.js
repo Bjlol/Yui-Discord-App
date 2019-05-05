@@ -30,8 +30,6 @@ var gif_hug = data.hug, gif_kiss = data.kiss, gif_slap = data.slap,
 var AirShip = Errors[0], NoMention = Errors[1], MentionSelf = Errors[2], WrongMention = Errors[3],
     NoArg = Errors[4], KillMe = Errors[5], CantDelete = Errors[6], NoPerms = Errors[7], WrongLang = Errors[8];
 
-app.listen(process.env.PORT);
-
 //Discord Bot
 const Discord = require('discord.js');
 const client = new Discord.Client();
@@ -243,15 +241,19 @@ client.on('message', msg => {
   if(!(msg.content.startsWith('yui!'))) return;
   var command = msg.content.substring('yui!'.length).split(' ').filter(element => element);
   if(commandList.indexOf(command[0]) === -1) return;
-  
+    
   //Variables
   var everyone = false, self = false, memberMentionedName;
   var memberUser = msg.member.nickname;
   if(memberUser === null) memberUser = msg.author.username;
   let mention = AllOrOneOrAlone(msg.mentions);
-  
+    
   if(mention.everyone) everyone = true;
   if(mention.member) {
+    if(msg.author.id == msg.mentions.members.first().id) {
+      msg.channel.send(MentionSelf)
+      return;
+    }
     memberMentionedName = msg.mentions.members.first().nickname;
     if(memberMentionedName == null) memberMentionedName = msg.mentions.members.first().user.username;
   }
@@ -363,8 +365,7 @@ client.on('message', msg => {
 })
 
 function createGifEmbed(title, gif) { return new Discord.RichEmbed().setTitle(title).setColor('RANDOM').setImage(gif); }
-function createGifEmbedWithColor(title, color, gif) { return new Discord.RichEmbed().setTitle(title).setColor(color).setImage(gif); }
-    
+function createGifEmbedWithColor(title, color, gif) { return new Discord.RichEmbed().setTitle(title).setColor(color).setImage(gif); }  
 client.login(process.env.SECRET);
 
 function genRandom(num) { return Math.floor(Math.random() * num); }
