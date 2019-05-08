@@ -3,12 +3,12 @@ let errors = require('./../errors.js')
 module.exports = {
     name: "ship",
     execute: (msg, args, ships) => {
-        if (args[1] === undefined || args[2] === undefined) {
+        if (args[0] === undefined || args[1] === undefined) {
             msg.channel.send(errors.AirShip);
             return;
         }
-        let randomNumber = (process.env.SECRET.length * args[1].length * args[2].length) % 100, answer;
-        if (args[1] == 'Kirito' && args[2] == 'Asuna' || args[2] == 'Kirito' && args[1] == 'Asuna') randomNumber = 100;
+        let randomNumber = (process.env.SECRET.length * args[0].length * args[1].length) % 100, answer;
+        if (args[0] == 'Kirito' && args[1] == 'Asuna' || args[1] == 'Kirito' && args[0] == 'Asuna') randomNumber = 100;
         if (randomNumber >= 0 && randomNumber < 20) answer = ships[0];
         if (randomNumber >= 20 && randomNumber < 40) answer = ships[1];
         if (randomNumber >= 40 && randomNumber < 60) answer = ships[2];
