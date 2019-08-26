@@ -1,7 +1,7 @@
 const utils = require('./../utils.js'), mentions = require('./../mention.js'),
     commands = require('./../commands.js'), gif_slap = require('./../data.js').slap;
 
-module.exports() = {
+module.exports = {
     name: "slap",
     execute: (msg, names, help) => {
         if (help) {
@@ -13,3 +13,4 @@ module.exports() = {
         else msg.channel.send(utils.createGifEmbed(`${names[1]} został uderzony przez ${names[0]}`,
             gif_slap[utils.genRandom(0, gif_slap.length - 1)]));
     }
+}

@@ -2,9 +2,14 @@ let errors = require('./../errors.js')
 
 module.exports = {
     name: "translate",
-    execute: (msg, args, yandex, Discord) => {
+    execute: (msg, args, yandex, Discord, help) => {
         var memberN = msg.member.nickname;
         if (memberN === null) memberN = msg.author.username;
+      if(help) {
+        var memberN = msg.member.nickname;
+        if (memberN === null) memberN = msg.author.username;
+        msg.channel.send(new Discord.RichEmbed().setTitle('Witaj, ' + memberN).addField('Użycie:', 'yui!translate <język docelowy> <text>').addField('Opis', 'Bawię się w tłumacza!'))
+      } else {
         yandex.detect(args[1], (_err, res) => {
             var baseLang = res.lang;
             yandex.translate(args[1], { from: baseLang, to: args[0] }, (_err, res) => {
@@ -17,5 +22,6 @@ module.exports = {
                     .addField('Język docelowy :', `\`${args[0]}\``, true).addField('Tekst przetłumaczony', `\`${res.text[0]}\``, true).setColor('RANDOM'));
             });
         });
+    }
     }
 }
