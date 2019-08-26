@@ -61,7 +61,7 @@ module.exports = {
     "nani": ["http://66.media.tumblr.com/d6360197f832bb7ad68f2fac0173efad/tumblr_mzmcocscYO1tpdfzvo1_500.gif",
         "https://66.media.tumblr.com/e75524f765499fdfc3b7b1e8ea110c7e/tumblr_nehb1c8tU81qbmv14o2_500.gif"],
 
-    "cookie": ["https://img3.minebook.me/gallery/7266_2012-03-25_145853.png"],
+    "cookie": ["https://static.planetminecraft.com/files/resource_media/screenshot/1212/2012-03-25_112838_1794941.jpg"],
 
     "ban": ["https://i.gifer.com/AKTw.gif"]
 }
