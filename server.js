@@ -26,29 +26,39 @@ const levels = db.define('users', {
     userId: { type: Sequelize.STRING, allowNull: false }
 })
 
-const GRP = db.define('GuildsRPData', {
+const GData = db.define('GuildsData', {
     guildId: { type: Sequelize.STRING, allowNull: false },
-    fields: { type: Sequelize.STRING, allowNull: false },
-    max: { type: Sequelize.INTEGER, allowNull: false },
-    role: { type: Sequelize.INTEGER },
-    AMessage: { type: Sequelize.STRING },
-    DMessage: { type: Sequelize.STRING },
+    fields: { type: Sequelize.STRING },
+    config: { type: Sequelize.STRING, allowNull: false },
+    Messages: { type: Sequelize.STRING },
+    rpEnabled: { type: Sequelize.BOOLEAN, allowNull: false },
     MoneySystem: { type: Sequelize.BOOLEAN, allowNull: false },
     XPSystem: { type: Sequelize.BOOLEAN, allowNull: false },
     Shop: { type: Sequelize.STRING }
 })
 
-const Heroes = db.define('Heroes', {
+const Heroes = db.define('HeroesData', {
+    equipment: { type: Sequelize.STRING, allowNull: false },
+    xp: { type: Sequelize.STRING },
+    lvl: { type: Sequelize.STRING },
+    money: { type: Sequelize.STRING },
     userId: { type: Sequelize.STRING, allowNull: false },
     guildId: { type: Sequelize.STRING, allowNull: false },
     name: { type: Sequelize.STRING, allowNull: false },
     fields: { type: Sequelize.STRING, allowNull: false },
     status: { type: Sequelize.INTEGER, allowNull: false }
 })
+const revievs = db.define('revievs', {
+    id: { type: Sequelize.STRING, allowNull: false, primaryKey: true },
+    revievText: { type: Sequelize.STRING, allowNull: false },
+    reviever: { type: Sequelize.STRING, allowNull: false },
+    herosData: { type: Sequelize.STRING, allowNull: false }
+})
 
-GRP.sync();
+GData.sync();
 Heroes.sync();
 levels.sync();
+revievs.sync();
 
 //Discord Bot
 const Discord = require('discord.js');
@@ -64,7 +74,7 @@ for (const file of commandFiles) {
 
 //Events
 client.on('ready', () => {
-    let normal = { game: { name: 'Chat', type: 'watching' }, status: 'online' };
+    let normal = { game: { name: 'chat na ' + client.guilds.array().length + ' serwerach', type: 'watching' }, status: 'online' };
     let service = { game: { name: 'Przerwa techniczna :D', type: 'playing' }, status: 'idle' };
     client.user.setPresence(normal);
     console.log('Logged & synced');
@@ -142,35 +152,51 @@ client.on('message', msg => {
         case 'profile':
             client.commands.get('profile').execute(msg, memberN, Discord, levels, arg[0] == 'help')
             break;
+        case 'settings':
+            let GuildData = GData.findOrCreate({
+                where: { guildId: msg.guild.id },
+                defaults: {
+                    guildId: msg.guild.id, rpEnabled: false, fields: JSON.stringify([]),
+                    config: JSON.stringify({
+                        max: 3, chatChannel: null,
+                        atackScalling: 10, atackBase: 40,
+                    }),
+                    Messages: JSON.stringify({ ApproveMess: null, DeclineMess: null }),
+                    MoneySystem: false, XPSystem: false, Shop: JSON.stringify({})
+                }
+            }).then(data => {
+                let upGuildData = client.commands.get('settings').execute(msg, Discord, arg[0] == 'help', data[0].dataValues)
+                GData.update(upGuildData, { where: { guildId: msg.guild.id } })
+            });
+            break;
     }
 
     if (msg.author.id == '344048874656366592') {
         var YuiGuildMember = msg.guild.members.find(member => member.id === '551414888199618561')
         if (msg.content.startsWith('yui!command')) client.commands.get('owner_command').execute(msg, YuiGuildMember);
-
-        if (msg.content.startsWith('yui!spam')) {
-            var num = command[1], textArray = command.slice(2);
-            client.commands.get('owner_spam').execute(msg, num, textArray.join(' '))
-        }
         if (msg.content.startsWith('yui!hero')) {
-            let GuildData = GRP.findOrCreate({
-                where: { guildId: msg.guild.id }, defaults: {
-                    guildId: msg.guild.id,
-                    fields: {},
-                    max: 3,
-                    role: null,
-                    AMessage: null,
-                    DMessage: null,
-                    MoneySystem: false,
-                    XPSystem: false,
-                    Shop: {},
+            let GuildData = GData.findOrCreate({
+                where: { guildId: msg.guild.id },
+                defaults: {
+                    guildId: msg.guild.id, rpEnabled: false, fields: JSON.stringify([]),
+                    config: JSON.stringify({
+                        max: 3, chatChannel: null,
+                        atackScalling: 10, atackBase: 40,
+                    }),
+                    Messages: JSON.stringify({ ApproveMess: null, DeclineMess: null }),
+                    MoneySystem: false, XPSystem: false, Shop: JSON.stringify({})
                 }
+            }).then(guildData => {
+                Heroes.findAll({where : { guildId: msg.guild.id, userId: msg.author.id}}).then(heroesData => {
+                    client.commands.get('hero').execute(msg, memberN, Discord, guildData.dataValues, heroesData, arg[0] == 'help')
+                })
+                
             });
-            client.commands.get('hero').execute(msg, memberN, Discord, GuildData, 'Name', arg[0] == 'help')
+
         }
     }
 
-    GRP.sync();
+    GData.sync();
     Heroes.sync();
     levels.sync();
 });
@@ -182,13 +208,13 @@ client.on('message', msg => {
         (msg.cleanContent === `@${client.user.username}` || msg.cleanContent === `@${YuiGuildMemberName}`))
         && !msg.author.bot || msg.content.startsWith('yui!help')) {
         var embed = new Discord.RichEmbed().setColor('RANDOM')
-            .setTitle('Pomoc dla Yui! (Czyli mnie), wersja 1.8')
+            .setTitle('Pomoc dla Yui! (Czyli mnie), wersja 1.9')
             .addField('UWAGA!', 'Przed każdą komendą dodaj `yui!`')
             .addField('For fun', '`ship`, `translate`, `lyrics`')
             .addField('Gify', '`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`')
             .addField('Inne', '`addme`, `ping`, `profile`')
             .addField('Roleplay', '`dice`, `atak`, `unik`')
-            .addField('Administracyjne', '`time`, `npc`, `place`')
+            .addField('Administracyjne', '`time`, `npc`, `place`, `settings`')
             .addField('Output komendy :', '`[argument]` - nie wymagany, `<argument>` - wymagany')
             .addField('Pomoc dla komendy: ', 'yui!<komenda> help');
         msg.channel.send(embed);

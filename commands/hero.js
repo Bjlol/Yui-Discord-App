@@ -1,9 +1,10 @@
 const utils = require('./../utils.js'), mentions = require('./../mention.js'),
-    commands = require('./../commands.js');
+    commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
+    errors = require('./../errors.js');
 
 module.exports = {
     name: "hero",
-    execute: (msg, memberN, Discord, GuildsRPData, Heroes ,help) => {
+    execute: (msg, memberN, Discord, GuildsData, Heroes, help) => {
         if (help) {
             let embed = new Discord.RichEmbed().setTitle(`Witaj ${memberN}`).addField('Użycie komendy:', '`yui!hero <gałąź> <argumenty / help>`')
                 .addField('Opis', 'W zależności od gałęzi pomagam zarządzać twoim bohaterem')
@@ -16,36 +17,38 @@ module.exports = {
                                        \`check\` - Przekazuje postać do sprawdzenia dla administracji
                                        \`pass\` - Oddaje komuś twoją postać`)
             if (msg.member.hasPermission('MANAGE_ROLES') || utils.isOwner(msg.author.id)) {
-                embed.addField('Gałęzie admina:', 
-                `**fields**:
-                >> \`list\` - Pokazuje listę pól i ich id (potrzebne do innych podkomend)
-                >> \`add\` - Dodaje pole o określonej nazwie
-                >> \`delete\` - Usuwa pole o określonej cyfrze
-                >> **optional**:
-                |➜ \`list\` - Pokazuje listę pól i ich id (potrzebne do innych podkomend)
-                |➜ \`add\` - Dodaje pole o określonej nazwie
-                |➜ \`delete\` - Usuwa pole o określonej cyfrze`)
-                embed.addField('event:', `
-                >> \`aprove\`: Co mam zrobić kiedy ktoś zaakceptuje postać?
-                |➜ \`message\`:
-                |>> ➜ \`show\` - Pokazuje spersonalizowaną wiadomość
-                |>> ➜ \`set\` - Ustawia / usuwa spersonalizowaną wiadomość
-                |➜ \`role\`: 
-                |>> ➜ \`add\` - Jaką role dać po akceptacji?
-                |>> ➜ \`delete\` - Jaką role zabrać po akceptacji?
-                **role**:- Jaka rola ma mieć uprawnienia do sprawdzania postaci?
-                |➜ \`show\` - Pokazuje jaka rola do zarządzania postaciami
-                |➜ \`set\` - Ustawia role do zarządzania postaciami
-                **hero**:
-                |➜ \`approve\` - Akctepuj bohatera
-                |➜ \`decline\` - Odrzuć bohatera
-                |➜ **max**:
-                |>> ➜ \`show\` - Pokazuje maksymalną liczbe postaci na serwerze
-                |>> ➜ \`set\` - Ustawia maksymalną liczbe postaci`)
+                embed.addField('Gałęzie admina:',
+                    `|➜ \`approve\` - Akctepuj bohatera
+                |➜ \`decline\` - Odrzuć bohatera`)
             }
             msg.channel.send(embed)
         } else {
-            
+            let interpenter = new StringReader(msg.content.substring('yui!hero'.length))
+            let sub = [];
+            sub[0] = interpenter.readWord();
+            if (interpenter.getText().length == 0 || !interpenter.canRead()) {
+                msg.channel.send('Przepraszam bardzo, czemu to jest puste... >.< \nWpisz `yui!hero help` Po więcej informacji!')
+                return;
+            }
+            switch (sub[0]) {
+                case 'create':
+                    sub[1] = interpenter.readQuotedString();
+                    if(sub[1].length < 1) {
+                        msg.channel.send()
+                    }
+                    let newHero = {
+                        equipment: JSON.stringify([]),
+                        xp: 0,
+                        lvl: 1,
+                        money: 0,
+                        userId: msg.author.id,
+                        guildId: msg.guild.id,
+                        name: sub[1],
+                        fields: JSON.stringify([]),
+                        status: 0
+                    }
+                    return {action: 'create', data: newHero}
+            }
         }
     }
 }
