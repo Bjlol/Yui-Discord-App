@@ -10,4 +10,6 @@ module.exports = {
     NumberBelowZero: new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'No sorka ale akceptuje tylko dodatnie!'),
     RPDisabled: new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Ta komenda jest zablokowana! Odblokuj paczkę RP, korzystając z komendy `yui!settings enable rp` (Tylko dla Administracji)'),
     CantFind: new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Sorka! Nie mogę tego znaleźć'),
+    CantFindChannel: new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Sorka! Nie mogę znaleźć tego kanału... \nMoże został usunięty? Zapytaj Admina'),
+    WrongField: new Discord.RichEmbed().setColor('RED').setTitle('Błąd').addField('Szczegóły :', 'Sorka! Nie mogę znależć takiego pola'),
 };

@@ -2,12 +2,11 @@ const StringReader = require('./../stringReader.js'), errors = require('./../err
 
 module.exports = {
     name: "settings",
-    execute: (msg, Discord, help, GuildData) => {
-        if (!msg.member.permissions.has('MANAGE_ROLES', true) || !utils.isOwner(msg.author.id)) {
+    execute: (msg, Discord, help, GuildData, GuildDataTemplate) => {
+        if (!(msg.member.hasPermission('MANAGE_ROLES') || utils.isOwner(msg.author.id))) {
             msg.channel.send(errors.NoPerms)
             return;
         }
-
         let name = msg.member.nickname;
         if (name === null) name = msg.author.username;
         let mess = JSON.parse(GuildData.Messages)
@@ -24,15 +23,13 @@ module.exports = {
             > **messages** - Jaką wiadomość wysłać po zakceptowaniu / odrzuceniu postaci?
             > **roles** - Jaką rolę dać po zakceptowaniu / odrzuceniu postaci?
             > **fields** - Pola postaci do rp (Wymaga paczki RP)
+            > **reset** - Przywraca wartości domyślne serwera
+            Gdy nic nie wpiszesz pokażą się aktualne ustawienia
             Status 'paczek' sprawdzisz \`yui!settings enable\` lub \`yui!settings disable\`
             Help po gałązce żeby dowiedzieć się więcej`))
         } else {
             let interpenter = new StringReader(msg.content.substring('yui!settings'.length));
             interpenter.skipSpaces()
-            if (interpenter.getText().length == 0 || !interpenter.canRead()) {
-                msg.channel.send('Przepraszam bardzo, czemu to jest puste... >.< \nWpisz `yui!settings help` Po więcej informacji!')
-                return;
-            }
             var sub = [];
             sub[0] = interpenter.readWord()
             switch (sub[0]) {
@@ -51,13 +48,21 @@ module.exports = {
                                     msg.channel.send(errors.NumberBelowZero);
                                 }
                                 break;
-                            case 'clear': {
+                            case 'clear':
                                 let data = JSON.parse(GuildData.config)
-                                data.max = sub[2];
+                                data.max = 3;
                                 GuildData.config = JSON.stringify(data)
                                 msg.channel.send('Ustawiono na wartość domyślną, `3`')
                                 break;
-                            }
+                            case 'help':
+                                msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`)
+                                    .addField('Użycie komendy', 'yui!settings max <ciąg dalszy>')
+                                    .addField('Dodatkowa pomoc:',
+                                        `> \`set\` <cyfra> - Ustawia maksymalną liczbe postaci na serwerze
+                                        > \`clear\` - Przywraca wartość domyślną (3)
+                                        > \`help\` - Pokazuje tą wiadomość
+                                        Bez argumentów pokazuje aktualną maksymalną liczbe postaci na serwerze!`))
+                                return;
                             default:
                                 msg.channel.send('Możesz mieć maksymalnie ' + JSON.parse(GuildData.config).max + ' postaci')
                                 break;
@@ -86,6 +91,15 @@ module.exports = {
                             GuildData.config = JSON.stringify(data)
                             msg.channel.send('Przywrócono wartość domyślną')
                             break;
+                        case 'help':
+                            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`)
+                                .addField('Użycie komendy', 'yui!settings channel <ciąg dalszy>')
+                                .addField('Dodatkowa pomoc:',
+                                    `> \`set\` <kanał> - Ustawia kanał do komendy \`chat\`
+                                    > \`clear\` - Przywraca wartość domyślną
+                                    > \`help\` - Pokazuje tą wiadomość
+                                    Bez argumentów pokazuje aktualny kanał do komendy \`chat\`!`))
+                            return;
                         default:
                             let channel = JSON.parse(GuildData.config).chatChannel == null ? '' : '<#' + JSON.parse(GuildData.config).chatChannel + '>'
                             if (JSON.parse(GuildData.config).chatChannel != null) {
@@ -112,6 +126,16 @@ module.exports = {
                             GuildData.XPSystem = true;
                             msg.channel.send('Zmieniono status `xp` na włączone, od teraz zdobywanie związane z zarządzaniem exp postaci są dostępne')
                             break;
+                        case 'help':
+                            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`)
+                                .addField('Użycie komendy', 'yui!settings enable <paczka>')
+                                .addField('Dodatkowa pomoc:',
+                                    `> \`rp\` - Odblokowuje paczkę \`RP\`
+                                    > \`money\` - Odblokowuje paczkę \`Money\`
+                                    > \`Xp\` - Odblokowuje paczkę \`Xp\`
+                                    > \`help\` - Pokazuje tą wiadomość
+                                    Bez argumentów pokazuje aktualny status paczek!`))
+                            return;
                         default:
                             msg.channel.send('Status:'
                                 + `\n\`Rp\` - ${GuildData.rpEnabled ? 'włączone' : 'wyłączone'}`
@@ -135,6 +159,16 @@ module.exports = {
                             GuildData.XPSystem = false;
                             msg.channel.send('Zmieniono status `xp` na wyłączone!')
                             break;
+                        case 'help':
+                            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`)
+                                .addField('Użycie komendy', 'yui!settings disable <paczka>')
+                                .addField('Dodatkowa pomoc:',
+                                    `> \`rp\` - Wyłącza paczkę \`RP\`
+                                    > \`money\` - Wyłącza paczkę \`Money\`
+                                    > \`Xp\` - Wyłącza paczkę \`Xp\`
+                                    > \`help\` - Pokazuje tą wiadomość
+                                    Bez argumentów pokazuje aktualny status paczek!`))
+                            return;
                         default:
                             msg.channel.send('Status:'
                                 + `\n\`Rp\` - ${GuildData.rpEnabled ? 'włączone' : 'wyłączone'}`
@@ -203,21 +237,19 @@ module.exports = {
                     switch (sub[1]) {
                         case 'add':
                             sub[2] = interpenter.readQuotedString();
-                            sub[3] = interpenter.readWord().toLowerCase();
-                            sub[4] = interpenter.readWord().toLowerCase();
+                            sub[3] = interpenter.readWord();
+                            sub[4] = interpenter.readWord();
                             if (sub[3] != 'yes' && sub[3] != 'no') {
                                 msg.channel.send(errors.KillMe);
                                 return;
                             }
-                            if (sub[4] != 'int' && sub[4] != 'point' && sub[4] != 'list' && sub[4] != 'string') {
+                            if (sub[4] != 'int' && sub[4] != 'point' && sub[4] != 'string') {
                                 msg.channel.send(errors.KillMe);
                                 return;
                             }
                             let field = {
-                                name: sub[2],
-                                optional: sub[3],
-                                type: sub[4],
-                                id: gdFields.length + 1
+                                name: sub[2], optional: sub[3],
+                                type: sub[4], id: gdFields.length + 1
                             }
                             gdFields.push(field);
                             GuildData.fields = JSON.stringify(gdFields);
@@ -231,14 +263,46 @@ module.exports = {
                                 return;
                             } else {
                                 let deletedField = gdFields.splice(fieldTD, 1)[0]
-                                msg.channel.send(`Usuniętoa pole o nazwie **${'"' + deletedField.name + '"'}**, które **${deletedField.optional == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a jego typ to **${deletedField.type}**`)
+                                msg.channel.send(`Usunięto pole o nazwie **${'"' + deletedField.name + '"'}**, które **${deletedField.optional == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a jego typ to **${deletedField.type}**`)
                             }
                             break;
-                        default:
-                            msg.channel.send(GuildData.fields)
-                            break;
+                        case 'help':
+                            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`)
+                                .addField('Użycie komendy', 'yui!settings fields <dalszy ciąg>')
+                                .addField('Dodatkowa pomoc:',
+                                    
+                                    `Komenda służy do zarządzania wzorem KP!! Jeśli chcesz dodać pole do postaci zobacz \`yui!hero field help\`
+                                    > \`add\` "<nazwa>" <opcjonalne> <typ> - Dodaje pole do karty postaci
+                                    > \`remove\` <id> - Usuwa pole o określonym id (zobacz \`list\` po id)
+                                    > \`list\` - Pokazuje listę dostępnych pól
+                                    > \`help\` - Pokazuje tą wiadomość
+                                    Nazwa musi być w pomiędzy \`"\`, opcjonalne - Przyjmuje tylko wartości \`yes\` i \`no\`
+                                    Typy pól: \n\`int\` - Liczba\n\`point\` - Liczba zmiennoprzecinkowa np. \`1.2\`\n\`string\` - Dowolny ciąg znaków, przy wypełnianiu \`\\n\` to nowa lina!`))
+                            return;
+                        case 'list':
+                            let mess = gdFields.reduce((sum, acc) => {
+                                return sum += `- '**${acc.name}**', **${acc.optional == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a typ to **${acc.type}**, id: **${acc.id}**\n`
+                            }, '')
+                            if (mess == '') msg.channel.send('Nie masz żadnych pól >.<\nPo pomoc \`yui!settings fields help\`')
+                            else msg.channel.send(new Discord.RichEmbed().setTitle('Witaj!').addField('O to pola dostępne na serwerze:', mess))
                     }
                     break;
+                case 'reset':
+                    GuildData = GuildDataTemplate;
+                    msg.channel.send('Pomyślnie przywrócono wartości domyślne w ustawieniach!')
+                    break;
+                default:
+                    let config = JSON.parse(GuildData.config)
+                    msg.channel.send(new Discord.RichEmbed().setTitle('Witaj').addField('Id serwera:', GuildData.guildId)
+                        .addField('Maksymalna liczba postaci:', config.max)
+                        .addField('Kanał do komendy `chat` (Wkrócte):', config.chatChannel == null ? 'Domyślne' : config.chatChannel)
+                        .addField('Skalowanie z lvl komendy atak (wkrótce)', config.atackScalling)
+                        .addField('Bazowy dmg komendy atak (wkrótce)', config.atackBase)
+                        .addField('Startowy stan konta postaci (wkrótce)', config.startingBalance)
+                        .addField('Paczki', `\n\`Rp\` - ${GuildData.rpEnabled ? 'włączone' : 'wyłączone'}`
+                            + `\n\`Money\` - ${GuildData.MoneySystem ? 'włączone' : 'wyłączone'}`
+                            + `\n\`Xp\` - ${GuildData.XPSystem ? 'włączone' : 'wyłączone'}`)
+                        .setColor('RANDOM'))
             }
             return GuildData;
         }

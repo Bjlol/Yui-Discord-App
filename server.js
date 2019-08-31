@@ -1,7 +1,7 @@
 const express = require('express'), app = express();
 const yandex = require('yandex-translate')(process.env.YandexApiKey),
     fs = require('fs'), https = require('https'), Sequelize = require('sequelize');
-const data = require('./data'), Errors = require('./errors.js'), commands = require('./commands.js')
+const data = require('./data'), errors = require('./errors.js'), commands = require('./commands.js')
     , utils = require('./utils.js'), StringReader = require('./stringReader.js');
 
 //Page requests
@@ -10,10 +10,7 @@ setInterval(() => https.get(`https://${process.env.PROJECT_DOMAIN}.glitch.me/`),
 app.listen(process.env.PORT);
 
 //Prefixes
-var prefix = {
-    default: "yui!",
-    admin: "yui!admin"
-}
+var prefix = { default: "yui!" }
 //Levels and such
 var dbFile = './.data/datas.db';
 const db = new Sequelize({ dialect: 'sqlite', storage: dbFile, logging: false });
@@ -37,28 +34,24 @@ const GData = db.define('GuildsData', {
     Shop: { type: Sequelize.STRING }
 })
 
-const Heroes = db.define('HeroesData', {
-    equipment: { type: Sequelize.STRING, allowNull: false },
+const Heroes = db.define('HeroesData_2_1', {
+    equipment: { type: Sequelize.STRING },
     xp: { type: Sequelize.STRING },
     lvl: { type: Sequelize.STRING },
     money: { type: Sequelize.STRING },
     userId: { type: Sequelize.STRING, allowNull: false },
     guildId: { type: Sequelize.STRING, allowNull: false },
     name: { type: Sequelize.STRING, allowNull: false },
-    fields: { type: Sequelize.STRING, allowNull: false },
-    status: { type: Sequelize.INTEGER, allowNull: false }
-})
-const revievs = db.define('revievs', {
-    id: { type: Sequelize.STRING, allowNull: false, primaryKey: true },
-    revievText: { type: Sequelize.STRING, allowNull: false },
-    reviever: { type: Sequelize.STRING, allowNull: false },
-    herosData: { type: Sequelize.STRING, allowNull: false }
+    fields: { type: Sequelize.STRING, },
+    status: { type: Sequelize.INTEGER, allowNull: false },
+    channelid: { type: Sequelize.STRING, },
+    imageLink: { type: Sequelize.STRING, },
+    id: { type: Sequelize.STRING, allowNull: false, primaryKey: true }
 })
 
 GData.sync();
 Heroes.sync();
 levels.sync();
-revievs.sync();
 
 //Discord Bot
 const Discord = require('discord.js');
@@ -155,18 +148,169 @@ client.on('message', msg => {
         case 'settings':
             let GuildData = GData.findOrCreate({
                 where: { guildId: msg.guild.id },
-                defaults: {
-                    guildId: msg.guild.id, rpEnabled: false, fields: JSON.stringify([]),
-                    config: JSON.stringify({
-                        max: 3, chatChannel: null,
-                        atackScalling: 10, atackBase: 40,
-                    }),
-                    Messages: JSON.stringify({ ApproveMess: null, DeclineMess: null }),
-                    MoneySystem: false, XPSystem: false, Shop: JSON.stringify({})
-                }
+                defaults: utils.getGDT(msg.guild.id)
             }).then(data => {
-                let upGuildData = client.commands.get('settings').execute(msg, Discord, arg[0] == 'help', data[0].dataValues)
+                let upGuildData = client.commands.get('settings').execute(msg, Discord, arg[0] == 'help', data[0].dataValues, utils.getGDT(msg.guild.id))
                 GData.update(upGuildData, { where: { guildId: msg.guild.id } })
+            });
+        case 'hero':
+            GData.findOrCreate({
+                where: { guildId: msg.guild.id },
+                defaults: utils.getGDT(msg.guild.id)
+            }).then(guildData => {
+                Heroes.findAll({ where: { guildId: msg.guild.id, userId: msg.author.id } }).then(heroesData => {
+                    let returnData = client.commands.get('hero').execute(msg, memberN, Discord, guildData[0].dataValues, heroesData, arg[0] == 'help')
+                    if (!returnData) return;
+                    switch (returnData.action) {
+                        case 'create':
+                            Heroes.create(returnData.data)
+                            break;
+                        case 'remove':
+                            Heroes.destroy({ where: { id: returnData.data } })
+                            break;
+                        case 'info':
+                            Heroes.findOne({ where: { id: returnData.data } }).then(data => {
+                                if (data == null) {
+                                    msg.channel.send('Nie znaleziono takiej postaci! \nSpróbuj ponownie lub zobacz na innym serwerze!')
+                                    return;
+                                } else {
+                                    data = data.dataValues;
+                                    let status;
+                                    switch (data.status) {
+                                        case 0:
+                                            status = 'W trakcie pisania';
+                                            break;
+                                        case 1:
+                                            status = 'Wysłane do sprawdzenia'
+                                            break;
+                                        case 2:
+                                            status = 'Odrzucone'
+                                            break;
+                                        case 3:
+                                            status = 'Zakceptowana'
+                                            break;
+                                    }
+                                    let infoEmbed = new Discord.RichEmbed().setTitle(`Witaj, ${memberN}, o to informacje o bohaterze`)
+                                        .addField('Imię/Nick', data.name).addField('Status', status).setColor('RANDOM')
+                                    if (guildData.MoneySystem) infoEmbed.addField('Pinionżki', data.money)
+                                    if (guildData.XPSystem) infoEmbed.addField('Doświadczenie', `${data.xp}, poziom ${data.lvl}`)
+                                    let fieldsData = JSON.parse(data.fields);
+                                    if (fieldsData.length > 0) {
+                                        fieldsData.sort((l, r) => l.id - r.id)
+                                            .forEach(elt => infoEmbed.addField(elt.name, elt.data));
+                                    }
+
+                                    if (data.imageLink != null) {
+                                        infoEmbed.setFooter('Arcik:')
+                                        infoEmbed.setImage(data.imageLink);
+                                    }
+                                    msg.channel.send(infoEmbed)
+                                }
+                            });
+                            break;
+                        case 'update':
+                            Heroes.findOne({ where: { id: returnData.data.id } }).then(data => {
+                                let datas = data.dataValues;
+                                switch (returnData.data.what) {
+                                    case 'fields':
+                                        datas.fields = returnData.data.data;
+                                        Heroes.update(datas, { where: { id: returnData.data.id } })
+                                        break;
+                                    case 'status':
+                                        datas.status = returnData.data.data;
+                                        Heroes.update(datas, { where: { id: returnData.data.id } })
+                                        break;
+                                    case 'image':
+                                        datas.imageLink = returnData.data.data;
+                                        Heroes.update(datas, { where: { id: returnData.data.id } })
+                                        break;
+                                    case 'channel':
+                                        datas.channelid = returnData.data.data;
+                                        Heroes.update(datas, { where: { id: returnData.data.id } })
+                                        break;
+                                    case 'whole':
+                                        let parsed = JSON.parse(returnData.data.data);
+                                        parsed.fields = JSON.stringify(parsed.fields);
+                                        parsed.equipment = JSON.stringify(parsed.equipment);
+                                        parsed.guildId = msg.guild.id;
+                                        parsed.id = returnData.data.id;
+                                        datas = parsed;
+                                        Heroes.update(datas, { where: { id: returnData.data.id } })
+                                        break;
+                                }
+                            })
+                            break;
+                        case 'status':
+                            Heroes.findOne({ where: { id: returnData.data } }).then(data => {
+                                if (data == null) {
+                                    msg.channel.send(`No sorka! Ale nie mogę znaleźć postaci o id **${returnData.data}** \nMoże pomyliłeś serwery ¯\\_(ツ)_/¯`)
+                                    return;
+                                }
+                                data = data.dataValues;
+                                let status;
+                                switch (data.status) {
+                                    case 0:
+                                        status = 'W trakcie pisania';
+                                        break;
+                                    case 1:
+                                        status = 'Wysłane do sprawdzenia'
+                                        break;
+                                    case 2:
+                                        status = 'Odrzucone'
+                                        break;
+                                    case 3:
+                                        status = 'Zaakceptowana'
+                                        break;
+                                }
+                                msg.channel.send(`Status postaci o nazwie **${data.name}** to **${status}**`)
+                            })
+                            break;
+                        case 'list':
+                            Heroes.findAll({ where: { userId: returnData.data.uid, guildId: returnData.data.gid } }).then(data => {
+                                let mess = data.reduce((sum, acc) => {
+                                    return sum + `**${acc.dataValues.name}**, id: ${acc.dataValues.id}\n`
+                                }, '');
+                                if (mess == '') msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField('Sorka! Ale ten użytkownik nie ma żadnych postaci', 'Shift happens'))
+                                else msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField('Lista postaci:', mess))
+                            })
+                            break;
+                        case 'show':
+                            switch (returnData.data) {
+                                case 'all':
+                                    Heroes.findAll({ where: { guildId: msg.guild.id } }).then(data => {
+                                        if (data.length > 10) {
+                                            let arr = data.slice((returnData.id - 1 * 10), 10)
+                                            let mess = arr.reduce((sum, acc) => {
+                                                return sum + `**${acc.dataValues.name}**, id: ${acc.dataValues.id}\n`;
+                                            }, '')
+                                            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField('Lista postaci:', mess))
+
+                                        } else {
+                                            let mess = data.reduce((sum, acc) => {
+                                                return sum + `**${acc.dataValues.name}**, id: ${acc.dataValues.id}\n`;
+                                            }, '')
+                                            if (mess == '') msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField('Sorka! Ale nie ma żadnych zarejestrowanych postaci', 'Shift happens'))
+                                            else msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField('Lista postaci:', mess))
+                                        }
+                                    })
+                                    break;
+
+                            }
+                            break;
+                        case 'channelUpdate':
+                            let channel = msg.guild.channels.find(elt => elt.id == returnData.data.channel)
+                            if (!channel) {
+                                msg.channel.send(erorrs.CantFindChannel)
+                                return;
+                            }
+                            channel.fetchMessages().then(coll => {
+                                channel.bulkDelete(channel.messages).then(() => {
+                                    channel.send(`yui!hero info ${returnData.data.id}`).then(msge => msge.delete(100));
+                                })
+                            })
+                    }
+                })
+
             });
             break;
     }
@@ -174,26 +318,6 @@ client.on('message', msg => {
     if (msg.author.id == '344048874656366592') {
         var YuiGuildMember = msg.guild.members.find(member => member.id === '551414888199618561')
         if (msg.content.startsWith('yui!command')) client.commands.get('owner_command').execute(msg, YuiGuildMember);
-        if (msg.content.startsWith('yui!hero')) {
-            let GuildData = GData.findOrCreate({
-                where: { guildId: msg.guild.id },
-                defaults: {
-                    guildId: msg.guild.id, rpEnabled: false, fields: JSON.stringify([]),
-                    config: JSON.stringify({
-                        max: 3, chatChannel: null,
-                        atackScalling: 10, atackBase: 40,
-                    }),
-                    Messages: JSON.stringify({ ApproveMess: null, DeclineMess: null }),
-                    MoneySystem: false, XPSystem: false, Shop: JSON.stringify({})
-                }
-            }).then(guildData => {
-                Heroes.findAll({where : { guildId: msg.guild.id, userId: msg.author.id}}).then(heroesData => {
-                    client.commands.get('hero').execute(msg, memberN, Discord, guildData.dataValues, heroesData, arg[0] == 'help')
-                })
-                
-            });
-
-        }
     }
 
     GData.sync();
@@ -208,12 +332,12 @@ client.on('message', msg => {
         (msg.cleanContent === `@${client.user.username}` || msg.cleanContent === `@${YuiGuildMemberName}`))
         && !msg.author.bot || msg.content.startsWith('yui!help')) {
         var embed = new Discord.RichEmbed().setColor('RANDOM')
-            .setTitle('Pomoc dla Yui! (Czyli mnie), wersja 1.9')
+            .setTitle('Pomoc dla Yui! (Czyli mnie), wersja 2.0')
             .addField('UWAGA!', 'Przed każdą komendą dodaj `yui!`')
             .addField('For fun', '`ship`, `translate`, `lyrics`')
             .addField('Gify', '`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`')
             .addField('Inne', '`addme`, `ping`, `profile`')
-            .addField('Roleplay', '`dice`, `atak`, `unik`')
+            .addField('Roleplay', '`dice`, `atak`, `unik`, hero')
             .addField('Administracyjne', '`time`, `npc`, `place`, `settings`')
             .addField('Output komendy :', '`[argument]` - nie wymagany, `<argument>` - wymagany')
             .addField('Pomoc dla komendy: ', 'yui!<komenda> help');
@@ -236,7 +360,6 @@ client.on('message', msg => {
     if (mention.everyone) everyone = true;
     if (mention.member) {
         if (msg.author.id == msg.mentions.members.first().id) {
-            msg.channel.send(Errors.MentionSelf)
             return;
         }
         memberMentionedName = msg.mentions.members.first().nickname;
