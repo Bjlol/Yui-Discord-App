@@ -89,6 +89,6 @@ function getRandomAboveTwenty() { return utils.genRandom(20, 40); }
 function calcDmg(lvl) {
   let num = utils.genRandom(1, lvl * 10 + 40)
   
-  while (num < lvl * 5 + 5) num = utils.genRandom(1, lvl * 10 + 40)
+  while (num < lvl * 10) num = utils.genRandom(1, lvl * 10 + 40)
   return num;
 }
