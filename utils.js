@@ -16,6 +16,24 @@ module.exports = {
             Messages: JSON.stringify({ ApproveMess: null, DeclineMess: null }),
             MoneySystem: false, XPSystem: false, rpEnabled: false
         }
+    },
+    getStatus: (status) => {
+        switch (status) {
+            case 0: return 'W trakcie pisania';
+            case 1: return 'Wysłane do sprawdzenia';
+            case 2: return 'Odrzucone';
+            case 3: return 'Zaakceptowana';
+        }
+    },
+    getAuthorName(msg) {
+        let memberN = msg.member.nickname;
+        if (memberN === null) memberN = msg.author.username;
+        return memberN;
+    },
+    getMentionedName(msg) {
+        let memberMentionedName = msg.mentions.members.first().nickname;
+        if (memberMentionedName == null) memberMentionedName = msg.mentions.members.first().user.username;
+        return memberMentionedName;
     }
 
 }

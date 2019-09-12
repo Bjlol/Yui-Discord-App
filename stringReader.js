@@ -7,6 +7,8 @@ class StringReader {
     getText() { return this.text; }
     getCursor() { return this.cursor; }
 
+    getRemaing() { return this.text.substring(this.cursor)}
+
     moveByInt(num = 1) { this.cursor += num; }
     moveByText(text) { this.cursor += text.length; }
 

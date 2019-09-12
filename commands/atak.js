@@ -1,33 +1,39 @@
-const commands = require('./../commands.js'), utils = require('./../utils.js'), errors = require('./../errors.js')
-
+let errors = require('./../errors.js'), utils = require('./../utils.js'), mentions = require('./../mention.js'),
+  commands = require('./../commands.js'), StringReader = require('./../stringReader.js');
 module.exports = {
   name: "atak",
-  execute: (msg, lvlu = 1, klasa = 'normal', chanceModififier = 0, Discord, name, help, attacks) => {
-    if (help) {
-      msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj ${name}`).addField('Użycie komendy:', `\`yui!atak <poziom> [klasa] [modyfikator]\``)
+  execute: (Yui, msg) => {
+    let attacks = Yui.userAttack;
+    let interpenter = new StringReader(msg.content.substring('yui!atak'.length)), sub = [];
+    sub[0] = interpenter.readWord();
+    if (sub[0] == 'help') {
+      msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj ${utils.getAuthorName(msg)}`).addField('Użycie komendy:', `\`yui!atak <poziom> [klasa] [modyfikator]\``)
         .addField('Opis', `Sprawdzam czy twój atak się udał i ile zadał obrażeń. Klasy: 
                                     - normal - Normalny atak\n -ss - Sword skill (technika miecza)
                                     - mystic - Umiejętność mistyczna \n- ult - Super umiejętność` ))
+      return;
+    }
+    sub[1] = interpenter.readWord();
+    sub[2] = interpenter.readInt();
+    var userComeout = attacks.get(msg.author.id) || { plus: 0, minus: 0 }
+    var state = getStats(userComeout.plus, userComeout.minus);
+
+    var lvl = ~sub[1] - 1;
+    if (lvl < 0 && !lvl) {
+      msg.channel.send(errors.KillMe).then(msge => { msge.delete(5000); msg.delete(5000) });
+      return;
+    }
+    var okay = 0;
+    if (state.first) okay = getRandomBelowZero() + sub[2];
+    if (state.second) okay = getRandomAboveTwenty() + sub[2];
+    if (state.third) okay = utils.genRandom(1, 40) + sub[2] + getBase(sub[1]);
+    var dmg = calcDmg(lvl);
+    if (okay >= 20) {
+      msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`).addField('Informacje:', getAnswer(sub[2], dmg, okay)).setColor('GREEN'))
+      return { user: msg.author.id, outcome: true }
     } else {
-      var userComeout = attacks.get(msg.author.id) || {plus: 0, minus: 0}
-      var state = getStats(userComeout.plus, userComeout.minus);
-      var lvl = parseInt(lvlu) - 1;
-      if (!lvl && lvl != 0) {
-        msg.channel.send(errors.KillMe).then(msge => { msge.delete(5000); msg.delete(5000)});
-        return;
-      }
-      var okay = 0, chanceModif;
-      if (state.first) okay = getRandomBelowZero() + parseInt(chanceModififier);
-      if (state.second) okay = getRandomAboveTwenty() + parseInt(chanceModififier);
-      if (state.third) okay = utils.genRandom(1, 40) + parseInt(chanceModififier) + getBase(klasa);
-      var dmg = calcDmg(lvl);
-      if (okay >= 20) {
-        msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`).addField('Informacje:', getAnswer(klasa, dmg, okay)).setColor('GREEN'))
-        return {user: msg.author.id, outcome: true}
-      } else {
-        msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`).addField('Informacje:', `[${okay}] Niestety, atak się nie udał...`).setColor('RED'))
-        return {user: msg.author.id, outcome: false}
-      }
+      msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`).addField('Informacje:', `[${okay}] Niestety, atak się nie udał...`).setColor('RED'))
+      return { user: msg.author.id, outcome: false }
     }
   }
 }
@@ -88,7 +94,7 @@ function getRandomAboveTwenty() { return utils.genRandom(20, 40); }
 
 function calcDmg(lvl) {
   let num = utils.genRandom(1, lvl * 10 + 40)
-  
+
   while (num < lvl * 10) num = utils.genRandom(1, lvl * 10 + 40)
   return num;
 }

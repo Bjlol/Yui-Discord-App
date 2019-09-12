@@ -18,6 +18,8 @@ module.exports = {
                                        \`check\` - Przekazuje postać do sprawdzenia dla administracji
                                        \`list\` - Pokazuj liste bohaterów na serwerze
                                        \`pass\` - Oddaje komuś twoją postać (W kolejnej wersji)
+                                       \`image\` - Ustawia zdjęcie postaci
+                                       \`update\` - Aktualizuje kp postaci o określonym ID
                                        Help po gałęzi po więcej informacji! Wyjątkiem jest create gdzie 'help' musi być w \`"\``)
             if (msg.member.hasPermission('MANAGE_ROLES') || utils.isOwner(msg.author.id)) {
                 embed.addField('Gałęzie admina:', '|➜ \`approve\` - Akctepuj bohatera\n|➜ \`decline\` - Odrzuć bohatera')
@@ -50,7 +52,7 @@ module.exports = {
                     }
                     if (sub[1] == 'help') {
                         msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`)
-                            .addField('Użycie komendy', 'yui!hero new "<nazwa>"')
+                            .addField('Użycie komendy', 'yui!hero create "<nazwa>"')
                             .addField('Dodatkowa pomoc:',
                                 `Tworzę nowego bohatera o podanej nazwie! Nie używaj proszę \`"\` w nazwie bo nie zadziała!`))
                         return;
@@ -258,6 +260,7 @@ module.exports = {
                         msg.channel.send(errors.NoPerms)
                         return
                     }
+                    /*
                 case 'export':
                     sub[1] = interpenter.readWord();
                     if (sub[1] == 'help') {
@@ -276,7 +279,7 @@ module.exports = {
                     exportText.fields = JSON.parse(exportText.fields)
                     exportText.equipment = JSON.parse(exportText.equipment)
                     msg.channel.send('Zbieram dane o twojej postaci! Daj mi chwilkę (￣▽￣)ノ')
-                    msg.channel.send(`\`\`\`${JSON.stringify(exportText)}\`\`\``);
+                    msg.channel.send(`\`\`\`${JSON.stringify(exportText)}\`\`\``, {split: true});
                     break;
                 case 'import':
                     sub[1] = interpenter.readWord();
@@ -299,6 +302,7 @@ module.exports = {
                         msge.channel.send(`Zrobione zobacz info o swojej postaci używając komendy \`yui!hero info ${sub[1]}\``)
                     })
                     return { action: 'update', data: { what: 'whole', id: sub[1], data: sub[2] } }
+                    */
                 case 'image':
                     sub[1] = interpenter.readWord()
                     sub[2] = interpenter.readQuotedString();
