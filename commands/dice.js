@@ -4,7 +4,7 @@ const utils = require('./../utils.js'), mentions = require('./../mention.js'),
 module.exports = {
   name: "dice",
   execute: (Yui, msg) => {
-    let interpenter = new StringReader(msg.content.substring('yui!dice'.length)), sub = [], maks = 6, name = utils.getName(msg);
+    let interpenter = new StringReader(msg.content.substring('yui!dice'.length)), sub = [], maks = 6, name = utils.getAuthorName(msg);
     sub[0] = interpenter.readWord();
     if (sub[0] == 'help') {
       msg.channel.send(new Discord.RichEmbed().setTitle('Witaj, ' + name).addField('Użycie:', 'yui!dice [maksymalna]').addField('Opis', 'Rzucam za ciebie kostką!'))

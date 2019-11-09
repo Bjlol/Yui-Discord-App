@@ -16,13 +16,20 @@
 
 <body>
     <div class="login-dark" style="width: 1200;height: 768px;">
-        <form method="post">
-            <h2 class="sr-only">Login Form</h2>
-            <div class="illustration" style="filter: blur(0px);width: 300;height: 280px;"><i class="icon ion-ios-game-controller-b"></i>
-                <h1></h1><button class="btn btn-primary btn-block" type="submit">Zaloguj się z Discordem</button></div>
-        </form>
+        <h2 class="sr-only">Login Form</h2>
+        <div class="illustration" style="filter: blur(0px);width: 300;height: 350px;"><i
+                class="icon ion-ios-game-controller-b"></i>
+            <p class="btn btn-primary btn-block">Najwidoczniej nie masz uprawnień!</p>
+            <h1></h1><button class="btn btn-primary btn-block" onclick="mainpage()">Przejdź do strony
+                głównej</button>
+        </div>
     </div>
     <script src="assets/js/jquery.min.js"></script>
+    <script>
+        function mainpage() {
+            window.location.href = 'https://yui-discord-bot.glitch.me';
+        }
+    </script>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
 </body>
 

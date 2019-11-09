@@ -1,0 +1,53 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>Yui Discord Bot</title>
+    <meta property="og:type" content="website" />
+    <meta name="description" content="Przekonaj się sam!" />
+    <link rel="stylesheet" href="./assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./assets/fonts/ionicons.min.css">
+    <link rel="stylesheet" href="./assets/css/Login-Form-Dark.css">
+    <link rel="stylesheet" href="./assets/css/Navigation-with-Button.css">
+    <script src="./assets/js/edithero.js"></script>
+    <style>
+        .login {
+            margin-right: 1rem;
+            text-decoration: none;
+            background-color:
+                rgb(131, 20, 113);
+            color: #fff;
+            border-radius: 20px;
+            padding: 8px 16px;
+            margin-left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+
+</html>
+
+<body>
+    <nav class="navbar navbar-light navbar-expand-md navigation-clean-button">
+        <div class="container"><img class="rounded-circle" src="/assets/img/Yui.png"
+                style="width: 48px;padding: 5px;" />
+            <a class="navbar-brand" href="/">Yui</a><button data-toggle="collapse" class="navbar-toggler"
+                data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span
+                    class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navcol-1">
+                <ul class="nav navbar-nav mr-auto">
+                    <li class="nav-item" role="presentation"><a class="nav-link active" href="#">Dodaj mnie!</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" href="#">Ranking</a></li>
+                    <li class="nav-item" role="presentation"><a class="nav-link" onclick="stylizeAll()">Dopasuj
+                            pola!</a></li>
+            </div>
+    </nav>
+    <div id="herodata">
+        <div id="heroName"></div>
+        <div id="heroInfo"></div>
+    </div>
+    <button class="login" onclick="update()">Zakceptuj zmiany!</button>
+</body>
+
+</html>

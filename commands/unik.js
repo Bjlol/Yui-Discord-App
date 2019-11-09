@@ -13,6 +13,9 @@ module.exports = {
       return;
     }
     let okay = utils.genRandom(1, 40) + chance;
+    if (msg.author.id == 326744195903651841) {
+      if (okay < 20) okay += 10;
+    }
     if (okay < 20) {
       msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`).addField('Informacje:', `[${okay}] Niestety, unik się nie udał...`).setColor('RED'))
     } else {

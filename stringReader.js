@@ -54,7 +54,7 @@ class StringReader {
             ch == '4' || ch == '5' ||
             ch == '6' || ch == '7' ||
             ch == '8' || ch == '9' ||
-            ch == '-';
+            ch == '-' || ch == '+';
     }
 
     isAllowedInPoint(ch) { return this.isAllowedInInt(ch) || ch == '.'; }
