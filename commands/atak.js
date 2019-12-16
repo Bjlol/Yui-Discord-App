@@ -11,7 +11,7 @@ module.exports = {
         .addField('Opis', `Sprawdzam czy twój atak się udał i ile zadał obrażeń. Klasy: 
                                     - normal - Normalny atak\n -ss - Sword skill (technika miecza)
                                     - mystic - Umiejętność mistyczna \n- ult - Super umiejętność` );
-      embed.addField('Dodatkowe oznaczenia:', '`W` - Zwiększony próg obrażeń\n`Ł` - zwiększa szanse na udany atak\n`M` - Zwiększa szanse na udane skille')
+      if (msg.guild.id == '563699676952526868') embed.addField('Dodatkowe oznaczenia:', '`W` - Zwiększony próg obrażeń\n`Ł` - zwiększa szanse na udany atak\n`M` - Zwiększa szanse na udane skille')
       msg.channel.send(embed)
       return;
     }
@@ -36,10 +36,10 @@ module.exports = {
           dmg = calcArmDmg(lvl);
           break;
         case 'Ł':
-          if(getBase(sub[1]) == 0) okay = Math.round(okay + okay * 0,1);
+          if (getBase(sub[1]) == 0) okay = Math.round(okay + okay * 0, 1);
           break;
         case 'M':
-          if(getBase(sub[1]) != 0) okay = Math.round(okay + okay * 0,15);
+          if (getBase(sub[1]) != 0) okay = Math.round(okay + okay * 0, 15);
           break;
       }
     }

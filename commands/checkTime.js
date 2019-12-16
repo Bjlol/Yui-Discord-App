@@ -53,9 +53,6 @@ module.exports = {
 }
 
 function getDaysFromDate(date) {
-  let today = new Date(), days = 0;
-  if (today.getFullYear() != date.getFullYear()) days += Math.abs(today.getFullYear() - date.getFullYear()) * 365;
-  if (today.getMonth() != date.getMonth()) days += Math.abs(today.getMonth() - date.getMonth()) * 30;
-  if (today.getDate() != date.getDate()) days += Math.abs(today.getDate() - date.getDate());
-  return days
+  let today = new Date();
+  return Math.round((today-date)/(1000*60*60*24));
 }
