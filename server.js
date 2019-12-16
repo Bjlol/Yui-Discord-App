@@ -1,10 +1,10 @@
 const express = require("express"), app = express();
 const yandex = require("yandex-translate")(process.env.YandexApiKey), fs = require("fs"), https = require("https"), Sequelize = require("sequelize");
 const data = require("./data"), errors = require("./errors.js"), commands = require("./commands.js"), utils = require("./utils.js"),
-  StringReader = require("./stringReader.js"), bodyParser = require('body-parser');;
+  StringReader = require("./stringReader.js"), bodyParser = require('body-parser');
 
 //Page requests
-app.use(express.static("webpage"), express.urlencoded({ extended: true }))
+app.use(express.static("webpage"));
 app.get("/", (_request, response) => {
   response.sendFile(__dirname + "/webpage/main.html");
 });
@@ -17,6 +17,7 @@ app.listen(process.env.PORT);
 
 //Prefixes
 var prefix = { default: "yui!" };
+
 //Levels and such
 var dbFile = "./.data/datas.db";
 const db = new Sequelize({
@@ -83,14 +84,10 @@ app.get("/api/guilds", (_request, response) => {
 app.get("/hero", (_request, response) => { response.sendFile(__dirname + '/webpage/templateHero.html') })
 app.get("/edithero", (request, response) => {
   Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
-    if (!elt) {
-      response.sendFile(__dirname + '/webpage/findless.html')
-    } else {
-      if (elt.userId == request.query.uid) {
-        response.sendFile(__dirname + '/webpage/templateEditHero.html')
-      } else {
-        response.sendFile(__dirname + '/webpage/noperms.html')
-      }
+    if (!elt) response.sendFile(__dirname + '/webpage/findless.html')
+    else {
+      if (elt.userId == request.query.uid) response.sendFile(__dirname + '/webpage/templateEditHero.html')
+      else response.sendFile(__dirname + '/webpage/noperms.html')
     }
   })
 
@@ -143,7 +140,7 @@ app.get("/api/heroupdate", (request, response) => {
         }
 
 
-        })
+      })
       Heroes.update(hero, { where: { id: request.query.id } });
       response.send('Jest oke');
       Heroes.sync();
@@ -192,7 +189,8 @@ Yui.on("message", msg => {
 });
 
 Yui.on("message", msg => {
-  var memberN = msg.member.nickname || msg.author.username;
+  let memeberN = msg.author.username;
+  if (msg.member) memberN = msg.member.nickname;
   if (!msg.content.startsWith(prefix.default)) return;
   var sReader = new StringReader(msg.content.substring(prefix.default.length));
   var command = sReader.readWord();
@@ -356,7 +354,7 @@ Yui.on("message", msg => {
                 elt => elt.id == returnData.data.channel
               );
               if (!channel) {
-                msg.channel.send(erorrs.CantFindChannel);
+                msg.channel.send(errors.CantFindChannel);
                 return;
               }
               channel.fetchMessages().then(coll => {
@@ -369,9 +367,6 @@ Yui.on("message", msg => {
           }
         });
       });
-      break;
-    case "radio":
-      Yui.commands.get("radio").execute(Yui, msg);
       break;
     case "ranking":
       Yui.commands.get("ranking").execute(Yui, msg);
@@ -400,35 +395,17 @@ Yui.on("message", msg => {
 });
 
 Yui.on("message", msg => {
-  var YuiGuildMemberName = msg.guild.members.find(
-    member => member.id === "551414888199618561"
-  ).nickname;
-
-  if (
-    (msg.isMemberMentioned(Yui.user) &&
-      !msg.mentions.everyone &&
-      (msg.cleanContent === `@${Yui.user.username}` ||
-        msg.cleanContent === `@${YuiGuildMemberName}`) &&
-      !msg.author.bot) ||
-    msg.content.startsWith("yui!help")
-  ) {
-    var embed = new Discord.RichEmbed()
-      .setColor("RANDOM")
-      .setTitle("Pomoc dla Yui! (Czyli mnie), wersja 2.0")
-      .addField("UWAGA!", "Przed każdą komendą dodaj `yui!`")
-      .addField("For fun", "`ship`, `translate`, `lyrics`")
-      .addField(
-        "Gify",
-        "`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`"
-      )
-      .addField("Inne", "`addme`, `ping`, `profile`")
-      .addField("Roleplay", "`dice`, `atak`, `unik`, hero")
-      .addField("Administracyjne", "`time`, `npc`, `place`, `settings`")
-      .addField(
-        "Output komendy :",
-        "`[argument]` - nie wymagany, `<argument>` - wymagany"
-      )
-      .addField("Pomoc dla komendy: ", "yui!<komenda> help");
+  var YuiGuildMemberName = "Yui";
+  if (msg.guild) YuiGuildMemberName = msg.guild.members.find(member => member.id === "551414888199618561").nickname;
+  if ((msg.isMemberMentioned(Yui.user) && !msg.mentions.everyone && (msg.cleanContent === `@${Yui.user.username}` ||
+    msg.cleanContent === `@${YuiGuildMemberName}`) && !msg.author.bot) || msg.content.startsWith("yui!help")) {
+    var embed = new Discord.RichEmbed().setColor("RANDOM")
+      .setTitle("Pomoc dla Yui! (Czyli mnie), wersja 2.0").addField("UWAGA!", "Przed każdą komendą dodaj `yui!`")
+      .addField("For fun", "`ship`, `translate`, `lyrics`").addField("Gify",
+        "`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`")
+      .addField("Inne", "`addme`, `ping`, `profile`").addField("Roleplay", "`dice`, `atak`, `unik`, hero")
+      .addField("Administracyjne", "`time`, `settings`").addField("Output komendy :",
+        "`[argument]` - nie wymagany, `<argument>` - wymagany").addField("Pomoc dla komendy: ", "yui!<komenda> help");
     msg.channel.send(embed);
   }
 });
