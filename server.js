@@ -1,7 +1,7 @@
 const express = require("express"), app = express();
 const yandex = require("yandex-translate")(process.env.YandexApiKey), fs = require("fs"), https = require("https"), Sequelize = require("sequelize");
-const data = require("./data"), errors = require("./errors.js"), commands = require("./commands.js"), utils = require("./utils.js"),
-  StringReader = require("./stringReader.js"), bodyParser = require('body-parser');
+const data = require("./data"), errors = require("./errors.js"), utils = require("./utils.js"),
+  StringReader = require("./stringReader.js");
 
 //Page requests
 app.use(express.static("webpage"));
@@ -77,8 +77,22 @@ app.get("/levels", (_request, response) => {
 app.get("/api/picture", (_request, response) => response.send(Yui.user.avatarURL));
 app.get("/api/guilds", (_request, response) => {
   let text = Yui.guilds.reduce((acc, value) => {
-    return acc + `{ name: ${value.name}, id: ${value.id} }`;
-  }, "");
+    let acc1 = acc;
+    elt = {
+      name: value.name, id: value.id,
+      NumOfChannels: value.channels.size, NumOdMembers: value.members.size,
+      NumOfEmojis: value.emojis.size, NumOfRoles: value.roles.size,
+      owner: {
+        id: value.ownerID,
+        tag: value.owner.user.tag
+      },
+      icon: value.iconURL,
+      isKeikoThere: value.members.find(elt => elt.id == "622783718783844356") ? true : false,
+      region: value.region
+    }
+    acc1.push(elt);
+    return acc1;
+  }, []);
   response.send(text);
 });
 app.get("/hero", (_request, response) => { response.sendFile(__dirname + '/webpage/templateHero.html') })
@@ -108,6 +122,7 @@ app.get("/api/hero", (request, response) => {
 app.get("/api/guildsettings", (request, response) => {
   GData.findOne({ where: { guildId: request.query.id } }).then(settings => {
     let editedSettings = settings.dataValues;
+    delete editedSettings.id;
     delete editedSettings.createdAt;
     delete editedSettings.updatedAt;
     response.send(editedSettings)
@@ -241,131 +256,8 @@ Yui.on("message", msg => {
         where: { guildId: msg.guild.id },
         defaults: utils.getGDT(msg.guild.id)
       }).then(guildData => {
-        Heroes.findAll({ where: { guildId: msg.guild.id, userId: msg.author.id } }).then(heroesData => {
-          let returnData = Yui.commands.get("hero")
-            .execute(Yui, msg, memberN, guildData[0].dataValues, heroesData, arg[0] == "help");
-          if (!returnData) return;
-          switch (returnData.action) {
-            case "create":
-              Heroes.create(returnData.data);
-              break;
-            case "remove":
-              Heroes.destroy({ where: { id: returnData.data } });
-              break;
-            case "info":
-              msg.channel.send(`Zobacz swoją postać na http://yui-discord-bot.glitch.me/hero?id=${returnData.data}`);
-              break;
-            case "edit":
-              msg.author.send(`Edytuj swoją postać na: http://yui-discord-bot.glitch.me/edithero?id=${returnData.data}&uid=${msg.author.id}`)
-              break;
-            case "status":
-              Heroes.findOne({ where: { id: returnData.data } }).then(data => {
-                if (data == null) {
-                  msg.channel.send(
-                    `No sorka! Ale nie mogę znaleźć postaci o id **${returnData.data}** \nMoże pomyliłeś serwery ¯\\_(ツ)_/¯`
-                  );
-                  return;
-                }
-                data = data.dataValues;
-                let status = utils.getStatus(data.status);
-                msg.channel.send(
-                  `Status postaci o nazwie **${data.name}** to **${status}**`
-                );
-              });
-              break;
-            case "list":
-              Heroes.findAll({
-                where: {
-                  userId: returnData.data.uid,
-                  guildId: returnData.data.gid
-                }
-              }).then(data => {
-                let mess = data.reduce((sum, acc) => {
-                  return (
-                    sum +
-                    `**${acc.dataValues.name}**, id: ${acc.dataValues.id}\n`
-                  );
-                }, "");
-                if (mess == "")
-                  msg.channel.send(
-                    new Discord.RichEmbed()
-                      .setTitle(`Witaj, ${memberN}`)
-                      .addField(
-                        "Sorka! Ale ten użytkownik nie ma żadnych postaci",
-                        "Shift happens"
-                      )
-                  );
-                else
-                  msg.channel.send(
-                    new Discord.RichEmbed()
-                      .setTitle(`Witaj, ${memberN}`)
-                      .addField("Lista postaci:", mess)
-                  );
-              });
-              break;
-            case "show":
-              switch (returnData.data) {
-                case "all":
-                  Heroes.findAll({ where: { guildId: msg.guild.id } }).then(
-                    data => {
-                      if (data.length > 10) {
-                        let arr = data.slice(returnData.id - 1 * 10, 10);
-                        let mess = arr.reduce((sum, acc) => {
-                          return (
-                            sum +
-                            `**${acc.dataValues.name}**, id: ${acc.dataValues.id}\n`
-                          );
-                        }, "");
-                        msg.channel.send(
-                          new Discord.RichEmbed()
-                            .setTitle(`Witaj, ${memberN}`)
-                            .addField("Lista postaci:", mess)
-                        );
-                      } else {
-                        let mess = data.reduce((sum, acc) => {
-                          return (
-                            sum +
-                            `**${acc.dataValues.name}**, id: ${acc.dataValues.id}\n`
-                          );
-                        }, "");
-                        if (mess == "")
-                          msg.channel.send(
-                            new Discord.RichEmbed()
-                              .setTitle(`Witaj, ${memberN}`)
-                              .addField(
-                                "Sorka! Ale nie ma żadnych zarejestrowanych postaci",
-                                "Shift happens"
-                              )
-                          );
-                        else
-                          msg.channel.send(
-                            new Discord.RichEmbed()
-                              .setTitle(`Witaj, ${memberN}`)
-                              .addField("Lista postaci:", mess)
-                          );
-                      }
-                    }
-                  );
-                  break;
-              }
-              break;
-            case "channelUpdate":
-              let channel = msg.guild.channels.find(
-                elt => elt.id == returnData.data.channel
-              );
-              if (!channel) {
-                msg.channel.send(errors.CantFindChannel);
-                return;
-              }
-              channel.fetchMessages().then(coll => {
-                channel.bulkDelete(channel.messages).then(() => {
-                  channel
-                    .send(`yui!hero info ${returnData.data.id}`)
-                    .then(msge => msge.delete(100));
-                });
-              });
-          }
-        });
+        let returnData = Yui.commands.get("hero").execute(Yui, msg, memberN, guildData[0].dataValues, Heroes, arg[0] == "help");
+        Heroes.sync()
       });
       break;
     case "ranking":
