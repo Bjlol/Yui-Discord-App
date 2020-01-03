@@ -1,5 +1,4 @@
-const utils = require('./../utils.js'), mentions = require('./../mention.js'),
-    commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
+const utils = require('./../utils.js'), commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
     errors = require('./../errors.js');
 
 module.exports = {

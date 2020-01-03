@@ -1,5 +1,4 @@
-const utils = require('./../utils.js'), mentions = require('./../mention.js'),
-    commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
+const utils = require('./../utils.js'), commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
     errors = require('./../errors.js');
 
 module.exports = {
@@ -135,7 +134,6 @@ module.exports = {
                 sub[1] = interpenter.readWord();
                 msg.author.send(`Edytuj swoją postać na: http://yui-discord-bot.glitch.me/edithero?id=${sub[1]}&uid=${msg.author.id}`)
                 break;
-            
         }
     }
 }

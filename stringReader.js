@@ -7,7 +7,7 @@ class StringReader {
     getText() { return this.text; }
     getCursor() { return this.cursor; }
 
-    getRemaing() { return this.text.substring(this.cursor)}
+    getRemaing() { return this.text.substring(this.cursor) }
 
     moveByInt(num = 1) { this.cursor += num; }
     moveByText(text) { this.cursor += text.length; }
@@ -71,6 +71,12 @@ class StringReader {
         let start = this.cursor;
         while (this.canRead() && this.isAllowedInPoint(this.peek())) this.moveByInt();
         return parseFloat(this.text.substring(start, this.cursor));
+    }
+    readBool(parsing = undefined) {
+        if (!parsing) parsing = this.readWord();
+        if (parsing == 'false') return false;
+        if (parsing == 'true') return true;
+        return undefined;
     }
 }
 

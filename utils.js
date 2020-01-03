@@ -17,23 +17,23 @@ module.exports = {
             MoneySystem: false, XPSystem: false, rpEnabled: false
         }
     },
-    getStatus: (status) => {
-        switch (status) {
-            case 0: return 'W trakcie pisania';
-            case 1: return 'Wysłane do sprawdzenia';
-            case 2: return 'Odrzucone';
-            case 3: return 'Zaakceptowana';
-        }
-    },
-    getAuthorName(msg) {
+    getAuthorName: (msg) => {
         let memberN = msg.member.nickname;
         if (memberN === null) memberN = msg.author.username;
         return memberN;
     },
-    getMentionedName(msg) {
+    getMentionedName: (msg) => {
         let memberMentionedName = msg.mentions.members.first().nickname;
         if (memberMentionedName == null) memberMentionedName = msg.mentions.members.first().user.username;
         return memberMentionedName;
+    },
+    mentions: (msg) => {
+        let mentions = msg.mentions;
+        return {
+            "everyone": mentions.everyone,
+            "member": mentions.members.first() != undefined,
+            "self": !(mentions.members.first() != undefined || mentions.everyone)
+        }
     }
 
 }

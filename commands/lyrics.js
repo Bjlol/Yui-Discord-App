@@ -1,4 +1,4 @@
-const utils = require('./../utils.js'), mentions = require('./../mention.js'), data = require('./../data.js'),
+const utils = require('./../utils.js'), data = require('./../data.js'),
   commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
   errors = require('./../errors.js'), https = require('https');
 

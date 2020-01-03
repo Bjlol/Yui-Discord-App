@@ -1,6 +1,5 @@
-const utils = require('./../utils.js'), mentions = require('./../mention.js'), data = require('./../data.js')
-commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
-  errors = require('./../errors.js');
+const utils = require('./../utils.js'), data = require('./../data.js'), commands = require('./../commands.js'),
+  StringReader = require('./../stringReader.js'), errors = require('./../errors.js');
 
 module.exports = {
   name: "time",
@@ -17,7 +16,7 @@ module.exports = {
       var memberN = msg.member.nickname;
       if (memberN === null) memberN = msg.author.username;
       let days = parseInt(sub[1]);
-      let mention = mentions(msg), self, everyone, memberMentionedName, roles = msg.mentions.roles;
+      let mention = utils.mentions(msg), self, everyone, memberMentionedName, roles = msg.mentions.roles;
 
       if (mention.everyone) everyone = true;
       if (mention.member) {
@@ -54,5 +53,5 @@ module.exports = {
 
 function getDaysFromDate(date) {
   let today = new Date();
-  return Math.round((today-date)/(1000*60*60*24));
+  return Math.round((today - date) / (1000 * 60 * 60 * 24));
 }

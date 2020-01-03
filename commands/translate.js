@@ -1,6 +1,5 @@
 let errors = require('./../errors.js'), yandex = require('yandex-translate')(process.env.YandexApiKey),
-    utils = require('./../utils.js'), mentions = require('./../mention.js'),
-    commands = require('./../commands.js'), StringReader = require('./../stringReader.js');
+    utils = require('./../utils.js'), commands = require('./../commands.js'), StringReader = require('./../stringReader.js');
 module.exports = {
     name: "translate",
     execute: (Yui, msg) => {

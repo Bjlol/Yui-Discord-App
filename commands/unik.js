@@ -1,5 +1,5 @@
-let errors = require('./../errors.js'), utils = require('./../utils.js'), mentions = require('./../mention.js'),
-  commands = require('./../commands.js'), StringReader = require('./../stringReader.js');
+let errors = require('./../errors.js'), utils = require('./../utils.js'), commands = require('./../commands.js'),
+  StringReader = require('./../stringReader.js');
 
 module.exports = {
   name: "unik",
@@ -8,7 +8,7 @@ module.exports = {
     let chance = interpenter.readInt();
     let help = chance == 'help' ? true : false;
     if (help) {
-            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj ${utils.getAuthorName(msg)}`).addField('Użycie komendy:', `\`yui!unik [modyfikator]\``)
+      msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj ${utils.getAuthorName(msg)}`).addField('Użycie komendy:', `\`yui!unik [modyfikator]\``)
         .addField('Opis', `Sprawdzam czy twój unik się udał`))
       return;
     }
