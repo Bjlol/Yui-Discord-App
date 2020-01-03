@@ -47,7 +47,12 @@ module.exports = [
         adress: "/hero",
         beforeLogin: true,
         execute: (_request, response, data) => {
-            response.sendFile(__dirname + '/webpage/templateHero.html')
+            try {
+              response.sendFile(__dirname + '/webpage/templateHero.html')  
+            } catch (error) {
+                console.log(error)
+            }
+            
         }
     },
     {
