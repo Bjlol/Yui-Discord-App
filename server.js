@@ -63,8 +63,8 @@ const Heroes = db.define("HeroesData_2_1", {
 GData.sync();
 Heroes.sync();
 levels.sync();
-
-app.get("/levels", (_request, response) => {
+/* 
+app.get("/levels", (_request, response, {levels, Yui, Heroes}) => {
   levels.findAll().then(res => {
     res.sort((lelt, relt) => {
       if (relt.lvl - lelt.lvl != 0) return relt.lvl - lelt.lvl;
@@ -73,7 +73,10 @@ app.get("/levels", (_request, response) => {
     response.send(res);
   });
 });
-
+ */
+require("./requests.js").forEach(elt => {
+  app.get(elt.adress, (request, response) => elt.execute(request, response, { levels, Yui, Heroes }))
+})
 app.get("/api/picture", (_request, response) => response.send(Yui.user.avatarURL));
 app.get("/api/guilds", (_request, response) => {
   let text = Yui.guilds.reduce((acc, value) => {
@@ -256,7 +259,7 @@ Yui.on("message", msg => {
         where: { guildId: msg.guild.id },
         defaults: utils.getGDT(msg.guild.id)
       }).then(guildData => {
-        let returnData = Yui.commands.get("hero").execute(Yui, msg, memberN, guildData[0].dataValues, Heroes, arg[0] == "help");
+        Yui.commands.get("hero").execute(Yui, msg, memberN, guildData[0].dataValues, Heroes, arg[0] == "help");
         Heroes.sync()
       });
       break;
@@ -265,12 +268,6 @@ Yui.on("message", msg => {
       break;
     case "keiko":
       Yui.commands.get("keiko").execute(Yui, msg);
-      break;
-    case "sex":
-      Yui.commands.get("sex").execute(Yui, msg);
-      break;
-    case "hack":
-      Yui.commands.get("hack").execute(Yui, msg);
       break;
   }
 
@@ -292,7 +289,7 @@ Yui.on("message", msg => {
   if ((msg.isMemberMentioned(Yui.user) && !msg.mentions.everyone && (msg.cleanContent === `@${Yui.user.username}` ||
     msg.cleanContent === `@${YuiGuildMemberName}`) && !msg.author.bot) || msg.content.startsWith("yui!help")) {
     var embed = new Discord.RichEmbed().setColor("RANDOM")
-      .setTitle("Pomoc dla Yui! (Czyli mnie), wersja 2.0").addField("UWAGA!", "Przed każdą komendą dodaj `yui!`")
+      .setTitle("Pomoc dla Yui! (Czyli mnie), wersja 2.1.0").addField("UWAGA!", "Przed każdą komendą dodaj `yui!`")
       .addField("For fun", "`ship`, `translate`, `lyrics`").addField("Gify",
         "`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`")
       .addField("Inne", "`addme`, `ping`, `profile`").addField("Roleplay", "`dice`, `atak`, `unik`, hero")
