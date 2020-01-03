@@ -3,8 +3,8 @@ const utils = require('./../utils.js'), commands = require('./../commands.js'), 
 
 module.exports = {
     name: "hero",
-    execute: (Yui, msg, memberN, GuildsData, Heroes) => {
-
+    execute: (Yui, msg, memberN, GuildsData, HeroesData) => {
+        let Heroes = HeroesData.findAll({ where: { guildId: msg.guild.id, userId: msg.author.id } });
         if (!GuildsData.rpEnabled) {
             msg.channel.send('Ta komenda jest zablokowana! Odblokuj paczkę RP, korzystając z komendy `yui!settings enable rp`')
             return;
@@ -22,7 +22,7 @@ module.exports = {
                 .addField('Gałęzie:', `\`create\` - Tworzy nowego bohatera
                                        \`list\` - Pokazuję listę bohaterów i ich id (potrzebne do innych komend)
                                        \`remove\` - Usuwam bohatera o określonym id
-                                       \`info\` - Pokazuję info o bohaterze (lub innym członku serwera jak i jego postaciach)
+                                       \`info\` - Pokazuję info o określonym przez id bohaterze
                                        \`edit\` - Wysyła link do edycji postaci (Nie pokazuj go nikomu!)`)
             msg.channel.send(embed)
             return;
@@ -43,7 +43,7 @@ module.exports = {
                     msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`)
                         .addField('Użycie komendy', 'yui!hero create "<nazwa>"')
                         .addField('Dodatkowa pomoc:',
-                            `Tworzę nowego bohatera o podanej nazwie! Nie używaj proszę \`"\` w nazwie bo nie zadziała!`))
+                            `Tworzę nowego bohatera o podanej nazwie!`))
                     return;
                 }
                 let newHero = {
@@ -53,7 +53,7 @@ module.exports = {
                     id: encrypt(msg.guild.id, msg.author.id, Heroes.length + 1)
                 }
                 msg.channel.send(`Stworzono nowego bohatera o nazwie **${newHero.name}**, wypełnij wymagane pola i ciesz się zabawą! Id postaci: ${newHero.id}`)
-                return { action: 'create', data: newHero }
+                Heroes.create(newHero);
             case 'list':
                 if (sub[1] == 'help') {
                     msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`)
@@ -70,7 +70,16 @@ module.exports = {
                     if (mess == '') msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField('Sorka! Ale nie masz żadnych postaci', 'Stwórz sobie jedną komendą `yui!hero create`'))
                     else msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField('Lista twoich postaci:', mess))
                 } else {
-                    return { action: 'list', data: { uid: mentionedMember.id, gid: msg.guild.id } };
+                    HeroesData.findAll({ where: { guildId: msg.guild.id, userId: mentionedMember.id } }).then(data => {
+                        let mess = data.reduce((sum, acc) => {
+                            return (sum + `**${acc.dataValues.name}**, id: ${acc.dataValues.id}\n`);
+                        }, "");
+                        if (mess.length == 0)
+                            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`)
+                                .addField("Sorka! Ale ten użytkownik nie ma żadnych postaci", "Shift happens"));
+                        else
+                            msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`).addField("Lista postaci:", mess));
+                    });
                 }
                 break;
             case 'remove':
@@ -93,7 +102,7 @@ module.exports = {
                 if (contains) {
                     if (pass) msg.channel.send(`Usunięto postać o id **${sub[1]}**`)
                     else msg.channel.send(errors.NoPerms)
-                    return { action: 'remove', data: sub[1] }
+                   Heroes.destroy({ where: { id: sub[1] } });
                 } else {
                     msg.channel.send(`No sorka! Ale nie mogę znaleźć twojej postaci o id **${sub[1]}** \nMoże pomyliłeś serwery albo nie jest to twoja postać ¯\\_(ツ)_/¯`)
                     return;
@@ -105,9 +114,15 @@ module.exports = {
                         .addField('Dodatkowa pomoc:',
                             `Pokazuje informacje o określonym bohaterze`))
                     return;
+                } else {
+                    sub[1] = interpenter.readWord();
+                    if(sub[1].length > 0) {
+                        msg.channel.send(`Zobacz swoją postać na http://yui-discord-bot.glitch.me/hero?id=${sub[1]}`);
+                    } else {
+                        msg.channel.send("No sorka ale podałeś złe id!")
+                    }
                 }
-                sub[1] = interpenter.readWord();
-                return { action: 'info', data: sub[1] }
+                break;
             case 'edit':
                 if (sub[1] == 'help') {
                     msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`)
@@ -117,7 +132,8 @@ module.exports = {
                     return;
                 }
                 sub[1] = interpenter.readWord();
-                return { action: 'edit', data: sub[1] }
+                msg.author.send(`Edytuj swoją postać na: http://yui-discord-bot.glitch.me/edithero?id=${sub[1]}&uid=${msg.author.id}`)
+                break;
         }
     }
 }
