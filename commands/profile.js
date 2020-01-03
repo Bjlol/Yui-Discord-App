@@ -1,5 +1,4 @@
-const utils = require('./../utils.js'), mentions = require('./../mention.js'),
-    commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
+const utils = require('./../utils.js'), commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
     errors = require('./../errors.js');
 
 module.exports = {
@@ -13,7 +12,7 @@ module.exports = {
                 .addField('Opis', `Pokazuje twój profil! Albo też kogoś innego...`))
             return;
         } else {
-            var user = mentions(msg).member, memberM, id = msg.author.id;
+            var user = utils.mentions(msg).member, memberM, id = msg.author.id;
             Yui.levels.findOne({ where: { userId: id } }).then(userData => {
                 let data;
                 if (!userData) data = { xp: '0', lvl: '1' }

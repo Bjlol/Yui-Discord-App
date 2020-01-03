@@ -1,5 +1,4 @@
-const utils = require('./../utils.js'), mentions = require('./../mention.js'),
-    commands = require('./../commands.js'), gif_slap = require('./../data.js').slap;
+const utils = require('./../utils.js'), commands = require('./../commands.js'), gif_slap = require('./../data.js').slap;
 
 module.exports = {
     name: "slap",
@@ -8,7 +7,7 @@ module.exports = {
             msg.channel.send(commands.help.default('slap', names[0]));
             return;
         }
-        let mention = mentions(msg);
+        let mention = utils.mentions(msg);
         if (!(mention.member)) msg.channel.send(commands.command.notOther('slap'));
         else msg.channel.send(utils.createGifEmbed(`${names[1]} został uderzony przez ${names[0]}`,
             gif_slap[utils.genRandom(0, gif_slap.length - 1)]));

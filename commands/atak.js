@@ -1,5 +1,5 @@
-let errors = require('./../errors.js'), utils = require('./../utils.js'), mentions = require('./../mention.js'),
-  commands = require('./../commands.js'), StringReader = require('./../stringReader.js');
+let errors = require('./../errors.js'), utils = require('./../utils.js'), commands = require('./../commands.js'),
+  StringReader = require('./../stringReader.js');
 module.exports = {
   name: "atak",
   execute: (Yui, msg) => {

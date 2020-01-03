@@ -1,6 +1,5 @@
-const utils = require('./../utils.js'), mentions = require('./../mention.js'), data = require('./../data.js')
-commands = require('./../commands.js'), Discord = require('discord.js'), StringReader = require('./../stringReader.js'),
-  errors = require('./../errors.js');
+const utils = require('./../utils.js'), data = require('./../data.js'), commands = require('./../commands.js'),
+  Discord = require('discord.js'), StringReader = require('./../stringReader.js'), errors = require('./../errors.js');
 
 module.exports = {
   name: "ship",
