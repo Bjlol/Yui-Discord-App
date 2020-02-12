@@ -31,6 +31,8 @@ module.exports = {
     if (state.third) okay = utils.genRandom(1, 40) + sub[2] + getBase(sub[1]);
     var dmg = calcDmg(lvl);
     if (msg.guild.id == '563699676952526868') {
+      if(userComeout.plus / userComeout.minus <= 60 + lvl * 0.5)  getRandomAboveTwenty() + sub[2];
+      else getRandomBelowZero() + sub[2]
       switch (sub[3]) {
         case 'W':
           dmg = calcArmDmg(lvl);

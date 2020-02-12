@@ -78,7 +78,7 @@ app.get("/api/picture", (_request, response) => response.send(Yui.user.avatarURL
 app.get("/api/guilds", (_request, response) => {
   let text = Yui.guilds.reduce((acc, value) => {
     let acc1 = acc;
-    elt = {
+    let elt = {
       name: value.name, id: value.id,
       NumOfChannels: value.channels.size, NumOdMembers: value.members.size,
       NumOfEmojis: value.emojis.size, NumOfRoles: value.roles.size,
@@ -95,6 +95,9 @@ app.get("/api/guilds", (_request, response) => {
   }, []);
   response.send(text);
 });
+app.get("/dbfile", (_request, response) => {
+  response.sendFile(__dirname + "/.data/datas.db")
+})
 app.get("/hero", (_request, response) => { response.sendFile(__dirname + '/webpage/templateHero.html') })
 app.get("/edithero", (request, response) => {
   Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
@@ -104,7 +107,6 @@ app.get("/edithero", (request, response) => {
       else response.sendFile(__dirname + '/webpage/noperms.html')
     }
   })
-
 })
 app.get("/api/hero", (request, response) => {
   Heroes.findOne({ where: { id: request.query.id } }).then(hero => {
@@ -116,7 +118,6 @@ app.get("/api/hero", (request, response) => {
     } else {
       response.send(null)
     }
-
   });
 })
 app.get("/api/guildsettings", (request, response) => {
@@ -128,7 +129,6 @@ app.get("/api/guildsettings", (request, response) => {
     response.send(editedSettings)
   });
 })
-
 app.get("/api/heroupdate", (request, response) => {
   Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
     let hero = elt.dataValues;
@@ -153,8 +153,6 @@ app.get("/api/heroupdate", (request, response) => {
               break;
             }
         }
-
-
       })
       Heroes.update(hero, { where: { id: request.query.id } });
       response.send('Jest oke');
@@ -162,6 +160,7 @@ app.get("/api/heroupdate", (request, response) => {
     })
   })
 })
+
 
 //Discord Bot
 const Discord = require("discord.js");
@@ -186,10 +185,7 @@ Yui.on("message", msg => {
   if (msg.author.bot) return;
   levels.count().then(ids => {
     levels
-      .findOrCreate({
-        where: { userId: msg.author.id },
-        defaults: { id: ids + 1, xp: "0", lvl: "1", userId: msg.author.id }
-      })
+      .findOrCreate({ where: { userId: msg.author.id }, defaults: { id: ids + 1, xp: "0", lvl: "1", userId: msg.author.id } })
       .then(elt => {
         let data = elt[0].dataValues;
         data.xp = parseInt(data.xp) + utils.genRandom(1, 5);
@@ -204,19 +200,39 @@ Yui.on("message", msg => {
 });
 
 Yui.on("message", msg => {
-  let memeberN = msg.author.username;
-  if (msg.member) memberN = msg.member.nickname;
+  let YuiGuildMemberName = "", mention = utils.mentions(msg), memberUser = msg.guild ? msg.member.nickname : null, memberMentionedName,
+    sReader = new StringReader(msg.content.substring(prefix.default.length)), command = sReader.readWord(), arg = [], outcome;
+  if (msg.guild) YuiGuildMemberName = msg.guild.members.find(member => member.id === "551414888199618561").nickname;
+  else YuiGuildMemberName = "Yui";
+  if ((msg.isMemberMentioned(Yui.user) && !msg.mentions.everyone && (msg.cleanContent === `@${Yui.user.username}` ||
+    msg.cleanContent === `@${YuiGuildMemberName}`) && !msg.author.bot) || msg.content.startsWith("yui!help")) {
+    var embed = new Discord.RichEmbed().setColor("RANDOM")
+      .setTitle("Pomoc dla Yui! (Czyli mnie), wersja 2.1.0").addField("UWAGA!", "Przed każdą komendą dodaj `yui!`")
+      .addField("For fun", "`ship`, `translate`, `lyrics`").addField("Gify",
+        "`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`")
+      .addField("Inne", "`addme`, `ping`, `profile`").addField("Roleplay", "`dice`, `atak`, `unik`, hero")
+      .addField("Administracyjne", "`time`, `settings`").addField("Output komendy :",
+        "`[argument]` - nie wymagany, `<argument>` - wymagany").addField("Pomoc dla komendy: ", "yui!<komenda> help");
+    msg.channel.send(embed);
+  }
   if (!msg.content.startsWith(prefix.default)) return;
-  var sReader = new StringReader(msg.content.substring(prefix.default.length));
-  var command = sReader.readWord();
-  var arg = [];
-  let outcome;
-  arg[0] = sReader.readWord();
-  arg[1] = sReader.readWord();
-  arg[2] = sReader.readWord();
   Yui.Discord = Discord;
   if (command == "settings") Yui.GuildData = GData;
   if (command == "ranking" || command == "profile") Yui.levels = levels;
+
+  if (memberUser === null) memberUser = msg.author.username;
+  if (mention.member) {
+    if (msg.author.id != msg.mentions.members.first().id) {
+      memberMentionedName = msg.mentions.members.first().nickname;
+      if (memberMentionedName == null)
+        memberMentionedName = msg.mentions.members.first().user.username;
+    }
+  }
+
+  for (var i = 0; i < 4; i++) {
+    arg.push(sReader.readWord())
+  }
+
   switch (command) {
     case "dice":
       Yui.commands.get("dice").execute(Yui, msg);
@@ -256,7 +272,7 @@ Yui.on("message", msg => {
         where: { guildId: msg.guild.id },
         defaults: utils.getGDT(msg.guild.id)
       }).then(guildData => {
-        let returnData = Yui.commands.get("hero").execute(Yui, msg, memberN, guildData[0].dataValues, Heroes, arg[0] == "help");
+        Yui.commands.get("hero").execute(Yui, msg, memberUser, guildData[0].dataValues, Heroes, arg[0] == "help");
         Heroes.sync()
       });
       break;
@@ -266,11 +282,35 @@ Yui.on("message", msg => {
     case "keiko":
       Yui.commands.get("keiko").execute(Yui, msg);
       break;
-    case "sex":
-      Yui.commands.get("sex").execute(Yui, msg);
+    case "kiss":
+      Yui.commands.get("kiss").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
       break;
-    case "hack":
-      Yui.commands.get("hack").execute(Yui, msg);
+    case "hug":
+      Yui.commands.get("hug").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "slap":
+      Yui.commands.get("slap").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cry":
+      Yui.commands.get("cry").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cheer":
+      Yui.commands.get("cheer").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "pat":
+      Yui.commands.get("pat").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "angry":
+      Yui.commands.get("angry").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "smile":
+      Yui.commands.get("smile").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cookie":
+      Yui.commands.get("cookie").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cat":
+      Yui.commands.get("cat").execute(msg, memberUser, arg[0] == "help");
       break;
   }
 
@@ -284,102 +324,6 @@ Yui.on("message", msg => {
   GData.sync();
   Heroes.sync();
   levels.sync();
-});
-
-Yui.on("message", msg => {
-  var YuiGuildMemberName = "Yui";
-  if (msg.guild) YuiGuildMemberName = msg.guild.members.find(member => member.id === "551414888199618561").nickname;
-  if ((msg.isMemberMentioned(Yui.user) && !msg.mentions.everyone && (msg.cleanContent === `@${Yui.user.username}` ||
-    msg.cleanContent === `@${YuiGuildMemberName}`) && !msg.author.bot) || msg.content.startsWith("yui!help")) {
-    var embed = new Discord.RichEmbed().setColor("RANDOM")
-      .setTitle("Pomoc dla Yui! (Czyli mnie), wersja 2.0").addField("UWAGA!", "Przed każdą komendą dodaj `yui!`")
-      .addField("For fun", "`ship`, `translate`, `lyrics`").addField("Gify",
-        "`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`")
-      .addField("Inne", "`addme`, `ping`, `profile`").addField("Roleplay", "`dice`, `atak`, `unik`, hero")
-      .addField("Administracyjne", "`time`, `settings`").addField("Output komendy :",
-        "`[argument]` - nie wymagany, `<argument>` - wymagany").addField("Pomoc dla komendy: ", "yui!<komenda> help");
-    msg.channel.send(embed);
-  }
-});
-
-//Reakcje, gify i słodkie rzeczy.
-
-Yui.on("message", msg => {
-  if (!msg.content.startsWith("yui!")) return;
-  var command = msg.content
-    .substring("yui!".length)
-    .split(" ")
-    .filter(element => element);
-
-  //Variables
-  var everyone = false,
-    self = false,
-    memberMentionedName;
-  var memberUser = msg.member.nickname;
-  if (memberUser === null) memberUser = msg.author.username;
-  let mention = require("./mention.js")(msg);
-
-  if (mention.everyone) everyone = true;
-  if (mention.member) {
-    if (msg.author.id == msg.mentions.members.first().id) {
-      return;
-    }
-    memberMentionedName = msg.mentions.members.first().nickname;
-    if (memberMentionedName == null)
-      memberMentionedName = msg.mentions.members.first().user.username;
-  }
-  if (mention.self) self = true;
-
-  switch (command[0]) {
-    case "kiss":
-      Yui.commands
-        .get("kiss")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "hug":
-      Yui.commands
-        .get("hug")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "slap":
-      Yui.commands
-        .get("slap")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "cry":
-      Yui.commands
-        .get("cry")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "cheer":
-      Yui.commands
-        .get("cheer")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "pat":
-      Yui.commands
-        .get("pat")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "angry":
-      Yui.commands
-        .get("angry")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "smile":
-      Yui.commands
-        .get("smile")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "cookie":
-      Yui.commands
-        .get("cookie")
-        .execute(msg, [memberUser, memberMentionedName], command[1] == "help");
-      break;
-    case "cat":
-      Yui.commands.get("cat").execute(msg, memberUser, command[1] == "help");
-      break;
-  }
 });
 
 Yui.login(process.env.SECRET);
