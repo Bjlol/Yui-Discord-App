@@ -9,6 +9,23 @@ app.get("/", (_request, response) => {
   response.sendFile(__dirname + "/webpage/main.html");
 });
 
+//Discord Bot
+const Discord = require("discord.js");
+const Yui = new Discord.Client();
+Yui.commands = new Discord.Collection();
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+Yui.userAttack = new Discord.Collection();
+for (const file of commandFiles) Yui.commands.set(require(`./commands/${file}`).name, require(`./commands/${file}`));
+
+function addOutcome(outcome) {
+  if (outcome) {
+    let userColl = Yui.userAttack.get(outcome.user) || { plus: 0, minus: 0 };
+    if (outcome.outcome) userColl.plus++;
+    else userColl.minus++;
+    Yui.userAttack.set(outcome.user, userColl);
+  }
+}
+
 setInterval(() => {
   https.get(`https://${process.env.PROJECT_DOMAIN}.glitch.me/`);
   https.get("https://keiko-assistant.glitch.me/");
@@ -67,7 +84,7 @@ levels.sync();
 app.get("/levels", (_request, response) => {
   levels.findAll().then(res => {
     res.sort((lelt, relt) => {
-      if (relt.lvl - lelt.lvl != 0) return relt.lvl - lelt.lvl;
+      if (relt.lvl - lelt.lvl !== 0) return relt.lvl - lelt.lvl;
       else return relt.xp - lelt.xp;
     });
     response.send(res);
@@ -87,24 +104,24 @@ app.get("/api/guilds", (_request, response) => {
         tag: value.owner.user.tag
       },
       icon: value.iconURL,
-      isKeikoThere: value.members.find(elt => elt.id == "622783718783844356") ? true : false,
+      isKeikoThere: value.members.find(elt => elt.id === "622783718783844356") ? true : false,
       region: value.region
-    }
+    };
     acc1.push(elt);
     return acc1;
   }, []);
   response.send(text);
 });
 app.get("/dbfile", (_request, response) => {
-  response.sendFile(__dirname + "/.data/datas.db")
+  response.sendFile(__dirname + "/.data/datas.db");
 })
-app.get("/hero", (_request, response) => { response.sendFile(__dirname + '/webpage/templateHero.html') })
+app.get("/hero", (_request, response) => { response.sendFile(__dirname + '/webpage/templateHero.html') });
 app.get("/edithero", (request, response) => {
   Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
-    if (!elt) response.sendFile(__dirname + '/webpage/findless.html')
+    if (!elt) response.sendFile(__dirname + '/webpage/findless.html');
     else {
-      if (elt.userId == request.query.uid) response.sendFile(__dirname + '/webpage/templateEditHero.html')
-      else response.sendFile(__dirname + '/webpage/noperms.html')
+      if (elt.userId === request.query.uid) response.sendFile(__dirname + '/webpage/templateEditHero.html');
+      else response.sendFile(__dirname + '/webpage/noperms.html');
     }
   })
 })
@@ -114,9 +131,9 @@ app.get("/api/hero", (request, response) => {
       let editedHero = hero.dataValues;
       delete editedHero.createdAt;
       delete editedHero.updatedAt;
-      response.send(editedHero)
+      response.send(editedHero);
     } else {
-      response.send(null)
+      response.send(null);
     }
   });
 })
@@ -126,7 +143,7 @@ app.get("/api/guildsettings", (request, response) => {
     delete editedSettings.id;
     delete editedSettings.createdAt;
     delete editedSettings.updatedAt;
-    response.send(editedSettings)
+    response.send(editedSettings);
   });
 })
 app.get("/api/heroupdate", (request, response) => {
@@ -141,14 +158,14 @@ app.get("/api/heroupdate", (request, response) => {
           case 'field':
             let parsedGFields = JSON.parse(guild.dataValues.fields);
             let parsedFields = JSON.parse(hero.fields);
-            let temp = parsedFields.find(field => field.id == update.id);
+            let temp = parsedFields.find(field => field.id === update.id);
             if (temp) {
               temp.data = update.dane;
-              parsedFields[parsedFields.findIndex(field => field.id == update.id)] = temp
+              parsedFields[parsedFields.findIndex(field => field.id === update.id)] = temp;
               hero.fields = JSON.stringify(parsedFields);
             } else {
-              temp = { name: parsedGFields.find(felt => felt.id == update.id).name, data: update.dane, id: update.id }
-              parsedFields.push(temp)
+              temp = { name: parsedGFields.find(felt => felt.id === update.id).name, data: update.dane, id: update.id };
+              parsedFields.push(temp);
               hero.fields = JSON.stringify(parsedFields);
               break;
             }
@@ -161,22 +178,11 @@ app.get("/api/heroupdate", (request, response) => {
   })
 })
 
-
-//Discord Bot
-const Discord = require("discord.js");
-const Yui = new Discord.Client();
-Yui.commands = new Discord.Collection();
-const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
-Yui.userAttack = new Discord.Collection();
-
-for (const file of commandFiles)
-  Yui.commands.set(require(`./commands/${file}`).name, require(`./commands/${file}`));
-
 //Events
 Yui.on("ready", () => {
   let normal = { game: { name: "ludziuf", type: "watching" }, status: "online" };
   let service = { game: { name: "Przerwa techniczna :D", type: "playing" }, status: "idle" };
-  Yui.user.setPresence(normal);
+  Yui.user.setPresence(service);
   console.log("Logged & synced");
 });
 
@@ -188,10 +194,10 @@ Yui.on("message", msg => {
       .findOrCreate({ where: { userId: msg.author.id }, defaults: { id: ids + 1, xp: "0", lvl: "1", userId: msg.author.id } })
       .then(elt => {
         let data = elt[0].dataValues;
-        data.xp = parseInt(data.xp) + utils.genRandom(1, 5);
-        if (parseInt(data.xp) > parseInt(data.lvl) * 200) {
-          data.xp = parseInt(data.xp) - 200;
-          data.lvl = parseInt(data.lvl) + 1;
+        data.xp = parseInt(data.xp, 10) + utils.genRandom(1, 5);
+        if (parseInt(data.xp) > parseInt(data.lvl, 10) * 200) {
+          data.xp = parseInt(data.xp, 10) - 200;
+          data.lvl = parseInt(data.lvl, 10) + 1;
         }
         levels.update(data, { where: { userId: msg.author.id } });
       });
@@ -217,8 +223,8 @@ Yui.on("message", msg => {
   }
   if (!msg.content.startsWith(prefix.default)) return;
   Yui.Discord = Discord;
-  if (command == "settings") Yui.GuildData = GData;
-  if (command == "ranking" || command == "profile") Yui.levels = levels;
+  if (command === "settings") Yui.GuildData = GData;
+  if (command === "ranking" || command === "profile") Yui.levels = levels;
 
   if (memberUser === null) memberUser = msg.author.username;
   if (mention.member) {
@@ -229,10 +235,8 @@ Yui.on("message", msg => {
     }
   }
 
-  for (var i = 0; i < 4; i++) {
-    arg.push(sReader.readWord())
-  }
-
+  for (var i = 0; i < 4; i++) arg.push(sReader.readWord())
+  
   switch (command) {
     case "dice":
       Yui.commands.get("dice").execute(Yui, msg);
@@ -272,7 +276,7 @@ Yui.on("message", msg => {
         where: { guildId: msg.guild.id },
         defaults: utils.getGDT(msg.guild.id)
       }).then(guildData => {
-        Yui.commands.get("hero").execute(Yui, msg, memberUser, guildData[0].dataValues, Heroes, arg[0] == "help");
+        Yui.commands.get("hero").execute(Yui, msg, memberUser, guildData[0].dataValues, Heroes, arg[0] === "help");
         Heroes.sync()
       });
       break;
@@ -283,34 +287,34 @@ Yui.on("message", msg => {
       Yui.commands.get("keiko").execute(Yui, msg);
       break;
     case "kiss":
-      Yui.commands.get("kiss").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("kiss").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "hug":
-      Yui.commands.get("hug").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("hug").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "slap":
-      Yui.commands.get("slap").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("slap").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "cry":
-      Yui.commands.get("cry").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("cry").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "cheer":
-      Yui.commands.get("cheer").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("cheer").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "pat":
-      Yui.commands.get("pat").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("pat").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "angry":
-      Yui.commands.get("angry").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("angry").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "smile":
-      Yui.commands.get("smile").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("smile").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "cookie":
-      Yui.commands.get("cookie").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      Yui.commands.get("cookie").execute(msg, [memberUser, memberMentionedName], arg[0] === "help");
       break;
     case "cat":
-      Yui.commands.get("cat").execute(msg, memberUser, arg[0] == "help");
+      Yui.commands.get("cat").execute(msg, memberUser, arg[0] === "help");
       break;
   }
 
@@ -327,12 +331,3 @@ Yui.on("message", msg => {
 });
 
 Yui.login(process.env.SECRET);
-
-function addOutcome(outcome) {
-  if (outcome) {
-    let userColl = Yui.userAttack.get(outcome.user) || { plus: 0, minus: 0 };
-    if (outcome.outcome) userColl.plus++;
-    else userColl.minus++;
-    Yui.userAttack.set(outcome.user, userColl);
-  }
-}
