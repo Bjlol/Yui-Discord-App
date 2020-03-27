@@ -1,7 +1,7 @@
 const express = require("express"), app = express();
 const yandex = require("yandex-translate")(process.env.YandexApiKey), fs = require("fs"), https = require("https"), Sequelize = require("sequelize");
 const data = require("./data"), errors = require("./errors.js"), utils = require("./utils.js"),
-  StringReader = require("./stringReader.js");
+  StringReader = require("./stringReader.js"), requests = require("./requests.js");
 
 //Page requests
 app.use(express.static("webpage"));
