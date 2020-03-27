@@ -17,7 +17,10 @@ module.exports = {
         "http://pa1.narvii.com/5604/f8cd0316b15b93c6ae1158bfbfbfddc3fd720909_hq.gif",
         "https://66.media.tumblr.com/5dbe18a0363c9e979cba48e25defbdcb/tumblr_nidloh81yS1u8ybn9o2_500.gif",
         "https://media.tenor.com/images/26aaa1494b424854824019523c7ba631/tenor.gif",
-        "https://media.tenor.co/images/802f7fa791471c2e33dc06475d2b54c8/tenor.gif"],
+        "https://media.tenor.co/images/802f7fa791471c2e33dc06475d2b54c8/tenor.gif",
+        "https://tenor.com/view/sao-kirito-asuna-kiss-love-gif-11743156",
+        "https://tenor.com/view/anime-zero-kiss-couple-lover-gif-12925177",
+        "https://tenor.com/view/love-anime-kiss-hot-damn-gif-9838409",],
 
     "slap": ["https://media.giphy.com/media/jLeyZWgtwgr2U/giphy.gif",
         "https://media1.tenor.com/images/fb17a25b86d80e55ceb5153f08e79385/tenor.gif?itemid=7919028"],
@@ -37,12 +40,6 @@ module.exports = {
 
     "cheer": ["https://media.giphy.com/media/TPkLd5oec1SzS/giphy.gif",
         "http://66.media.tumblr.com/tumblr_mbebsbxXcF1qzvtljo1_500.gif"],
-
-    "kill_self": ["https://media.giphy.com/media/6rzFgXEMsDY4g/giphy.gif",
-        "https://media.giphy.com/media/13kJc5CTOnqdQk/giphy.gif"],
-
-    "kill_other": ["https://66.media.tumblr.com/b6e35a3a7e1c2c1c31ab32c3459332a3/tumblr_o0lbjtC84K1qimk8ao2_r1_540.gif",
-        "https://akibento.com/blog/wp-content/uploads/2016/10/giphy.gif"],
 
     "angry": ["http://i2.wp.com/ganbareanime.com/wp-content/uploads/2014/08/Sword-Art-Online-II-ep-5-review-Sinon-Changing.jpg",
         "https://tse1.mm.bing.net/th?id=OIP.y4ce-nJ1WIYnAPjz-STfZwHaD5&pid=Api&dpr=1",

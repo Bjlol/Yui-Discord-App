@@ -1,26 +1,31 @@
-const errors = require('./../errors.js'), data = require('./../data.js'), Discord = require('discord.js');
+const utils = require('./../utils.js'), data = require('./../data.js'), commands = require('./../commands.js'),
+  Discord = require('discord.js'), StringReader = require('./../stringReader.js'), errors = require('./../errors.js');
 
 module.exports = {
-    name: "ship",
-    execute: (msg, args, help) => {
-      if(help) {
-        var memberN = msg.member.nickname;
-        if (memberN === null) memberN = msg.author.username;
-        msg.channel.send(new Discord.RichEmbed().setTitle('Witaj, ' + memberN).addField('Użycie:', 'yui!ship <1 imie> <2 imie>').addField('Opis', 'Sprawdzam dopasowanie!'))
-      } else {
-        let ships = data.ship
-        if (args[0] === undefined || args[1] === undefined) {
-            msg.channel.send(errors.AirShip);
-            return;
-        }
-        let randomNumber = (process.env.SECRET.length * args[0].length * args[1].length) % 100, answer;
-        if (randomNumber >= 0 && randomNumber < 20) answer = ships[0];
-        if (randomNumber >= 20 && randomNumber < 40) answer = ships[1];
-        if (randomNumber >= 40 && randomNumber < 60) answer = ships[2];
-        if (randomNumber >= 60 && randomNumber < 80) answer = ships[3];
-        if (randomNumber >= 80 && randomNumber < 100) answer = ships[4];
-        if (randomNumber == 100) answer = ':heart: Też tak uważam :heart:';
-
-        msg.channel.send(`:heart: Sprawdzam :heart: \n - ${args[0]} \n - ${args[1]} \n${randomNumber}% - ${answer}`);}
+  name: "ship",
+  execute: (Yui, msg) => {
+    let interpenter = new StringReader(msg.content.substring('yui!ship'.length)), sub = [];
+    sub[0] = interpenter.readWord();
+    if (sub[0] == 'help') msg.channel.send(new Discord.RichEmbed().setTitle('Witaj, ' + utils.getAuthorName(msg)).addField('Użycie:', 'yui!ship <osoba> <2 osoba>')
+      .addField('Opis', 'Sprawdzam dopasowanie!'))
+    else {
+      if (sub[0] == undefined) {
+        msg.channel.send(errors.KillMe);
+        return;
+      }
+      sub[1] = interpenter.readWord();
+      if (sub[1] == undefined) {
+        msg.channel.send(errors.KillMe);
+        return;
+      }
+      let randomNumber = (process.env.SECRET.length * sub[0].length * sub[1].length) % 100 + 1, answer;
+      if (randomNumber >= 0 && randomNumber < 20) answer = data.ship[0];
+      if (randomNumber >= 20 && randomNumber < 40) answer = data.ship[1];
+      if (randomNumber >= 40 && randomNumber < 60) answer = data.ship[2];
+      if (randomNumber >= 60 && randomNumber < 80) answer = data.ship[3];
+      if (randomNumber >= 80 && randomNumber < 100) answer = data.ship[4];
+      if (randomNumber == 100) answer = ':heart: Też tak uważam :heart:';
+      msg.channel.send(`:heart: Sprawdzam :heart: \n - ${sub[0]} \n - ${sub[1]} \n${randomNumber}% - ${answer}`);
     }
+  }
 }

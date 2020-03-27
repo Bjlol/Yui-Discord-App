@@ -1,255 +1,338 @@
-const express = require('express'), app = express();
-const yandex = require('yandex-translate')(process.env.YandexApiKey),
-    fs = require('fs'), https = require('https'), Sequelize = require('sequelize');
-const data = require('./data'), Errors = require('./errors.js'), commands = require('./commands.js')
-    , utils = require('./utils.js'), StringReader = require('./stringReader.js');
+const express = require("express"), app = express();
+const yandex = require("yandex-translate")(process.env.YandexApiKey), fs = require("fs"), https = require("https"), Sequelize = require("sequelize");
+const data = require("./data"), errors = require("./errors.js"), utils = require("./utils.js"),
+  StringReader = require("./stringReader.js");
 
 //Page requests
-app.get("/", (_request, response) => { response.send('Yui is up and running in the 90\'s'); });
-setInterval(() => https.get(`https://${process.env.PROJECT_DOMAIN}.glitch.me/`), 250000);
+app.use(express.static("webpage"));
+app.get("/", (_request, response) => {
+  response.sendFile(__dirname + "/webpage/main.html");
+});
+
+setInterval(() => {
+  https.get(`https://${process.env.PROJECT_DOMAIN}.glitch.me/`);
+  https.get("https://keiko-assistant.glitch.me/");
+}, 250000);
 app.listen(process.env.PORT);
 
 //Prefixes
-var prefix = {
-    default: "yui!",
-    admin: "yui!admin"
-}
+var prefix = { default: "yui!" };
+
 //Levels and such
-var dbFile = './.data/datas.db';
-const db = new Sequelize({ dialect: 'sqlite', storage: dbFile, logging: false });
+var dbFile = "./.data/datas.db";
+const db = new Sequelize({
+  dialect: "sqlite",
+  storage: dbFile,
+  logging: false
+});
 db.authenticate();
 
-const levels = db.define('users', {
-    id: { type: Sequelize.STRING, allowNull: false, primaryKey: true },
-    xp: { type: Sequelize.STRING, allowNull: false },
-    lvl: { type: Sequelize.STRING, allowNull: false },
-    userId: { type: Sequelize.STRING, allowNull: false }
-})
+const levels = db.define("users", {
+  id: { type: Sequelize.STRING, allowNull: false, primaryKey: true },
+  xp: { type: Sequelize.STRING, allowNull: false },
+  lvl: { type: Sequelize.STRING, allowNull: false },
+  userId: { type: Sequelize.STRING, allowNull: false }
+});
 
-const GRP = db.define('GuildsRPData', {
-    guildId: { type: Sequelize.STRING, allowNull: false },
-    fields: { type: Sequelize.STRING, allowNull: false },
-    max: { type: Sequelize.INTEGER, allowNull: false },
-    role: { type: Sequelize.INTEGER },
-    AMessage: { type: Sequelize.STRING },
-    DMessage: { type: Sequelize.STRING },
-    MoneySystem: { type: Sequelize.BOOLEAN, allowNull: false },
-    XPSystem: { type: Sequelize.BOOLEAN, allowNull: false },
-    Shop: { type: Sequelize.STRING }
-})
+const GData = db.define("GuildsData", {
+  guildId: { type: Sequelize.STRING, allowNull: false },
+  fields: { type: Sequelize.STRING },
+  config: { type: Sequelize.STRING, allowNull: false },
+  Messages: { type: Sequelize.STRING },
+  rpEnabled: { type: Sequelize.BOOLEAN, allowNull: false },
+  MoneySystem: { type: Sequelize.BOOLEAN, allowNull: false },
+  XPSystem: { type: Sequelize.BOOLEAN, allowNull: false },
+  Shop: { type: Sequelize.STRING }
+});
 
-const Heroes = db.define('Heroes', {
-    userId: { type: Sequelize.STRING, allowNull: false },
-    guildId: { type: Sequelize.STRING, allowNull: false },
-    name: { type: Sequelize.STRING, allowNull: false },
-    fields: { type: Sequelize.STRING, allowNull: false },
-    status: { type: Sequelize.INTEGER, allowNull: false }
-})
+const Heroes = db.define("HeroesData_2_1", {
+  equipment: { type: Sequelize.STRING },
+  xp: { type: Sequelize.STRING },
+  lvl: { type: Sequelize.STRING },
+  money: { type: Sequelize.STRING },
+  userId: { type: Sequelize.STRING, allowNull: false },
+  guildId: { type: Sequelize.STRING, allowNull: false },
+  name: { type: Sequelize.STRING, allowNull: false },
+  fields: { type: Sequelize.STRING },
+  status: { type: Sequelize.INTEGER, allowNull: false },
+  channelid: { type: Sequelize.STRING },
+  imageLink: { type: Sequelize.STRING },
+  id: { type: Sequelize.STRING, allowNull: false, primaryKey: true }
+});
 
-GRP.sync();
+GData.sync();
 Heroes.sync();
 levels.sync();
 
-//Discord Bot
-const Discord = require('discord.js');
-const client = new Discord.Client();
-client.commands = new Discord.Collection();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-client.userAttack = new Discord.Collection();
-
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.name, command);
-}
-
-//Events
-client.on('ready', () => {
-    let normal = { game: { name: 'Chat', type: 'watching' }, status: 'online' };
-    let service = { game: { name: 'Przerwa techniczna :D', type: 'playing' }, status: 'idle' };
-    client.user.setPresence(normal);
-    console.log('Logged & synced');
+app.get("/levels", (_request, response) => {
+  levels.findAll().then(res => {
+    res.sort((lelt, relt) => {
+      if (relt.lvl - lelt.lvl != 0) return relt.lvl - lelt.lvl;
+      else return relt.xp - lelt.xp;
+    });
+    response.send(res);
+  });
 });
 
-client.on('message', msg => {
-    if (msg.content.startsWith('yui!')) return;
-    if (msg.author.bot) return;
-    levels.count().then(ids => {
-        levels.findOrCreate({ where: { userId: msg.author.id }, defaults: { id: ids + 1, xp: '0', lvl: '1', userId: msg.author.id } }).then(elt => {
-            let data = elt[0].dataValues;
-            data.xp = parseInt(data.xp) + utils.genRandom(1, 10);
-            if (parseInt(data.xp) > parseInt(data.lvl) * 100) {
-                data.xp = parseInt(data.xp) - 100;
-                data.lvl = parseInt(data.lvl) + 1;
+app.get("/api/picture", (_request, response) => response.send(Yui.user.avatarURL));
+app.get("/api/guilds", (_request, response) => {
+  let text = Yui.guilds.reduce((acc, value) => {
+    let acc1 = acc;
+    let elt = {
+      name: value.name, id: value.id,
+      NumOfChannels: value.channels.size, NumOdMembers: value.members.size,
+      NumOfEmojis: value.emojis.size, NumOfRoles: value.roles.size,
+      owner: {
+        id: value.ownerID,
+        tag: value.owner.user.tag
+      },
+      icon: value.iconURL,
+      isKeikoThere: value.members.find(elt => elt.id == "622783718783844356") ? true : false,
+      region: value.region
+    }
+    acc1.push(elt);
+    return acc1;
+  }, []);
+  response.send(text);
+});
+app.get("/dbfile", (_request, response) => {
+  response.sendFile(__dirname + "/.data/datas.db")
+})
+app.get("/hero", (_request, response) => { response.sendFile(__dirname + '/webpage/templateHero.html') })
+app.get("/edithero", (request, response) => {
+  Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
+    if (!elt) response.sendFile(__dirname + '/webpage/findless.html')
+    else {
+      if (elt.userId == request.query.uid) response.sendFile(__dirname + '/webpage/templateEditHero.html')
+      else response.sendFile(__dirname + '/webpage/noperms.html')
+    }
+  })
+})
+app.get("/api/hero", (request, response) => {
+  Heroes.findOne({ where: { id: request.query.id } }).then(hero => {
+    if (hero) {
+      let editedHero = hero.dataValues;
+      delete editedHero.createdAt;
+      delete editedHero.updatedAt;
+      response.send(editedHero)
+    } else {
+      response.send(null)
+    }
+  });
+})
+app.get("/api/guildsettings", (request, response) => {
+  GData.findOne({ where: { guildId: request.query.id } }).then(settings => {
+    let editedSettings = settings.dataValues;
+    delete editedSettings.id;
+    delete editedSettings.createdAt;
+    delete editedSettings.updatedAt;
+    response.send(editedSettings)
+  });
+})
+app.get("/api/heroupdate", (request, response) => {
+  Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
+    let hero = elt.dataValues;
+    GData.findOne({ where: { guildId: hero.guildId } }).then(guild => {
+      JSON.parse(decodeURIComponent(request.get('data'))).forEach(update => {
+        switch (update.type) {
+          case 'img':
+            hero.imageLink = update.dane;
+            break;
+          case 'field':
+            let parsedGFields = JSON.parse(guild.dataValues.fields);
+            let parsedFields = JSON.parse(hero.fields);
+            let temp = parsedFields.find(field => field.id == update.id);
+            if (temp) {
+              temp.data = update.dane;
+              parsedFields[parsedFields.findIndex(field => field.id == update.id)] = temp
+              hero.fields = JSON.stringify(parsedFields);
+            } else {
+              temp = { name: parsedGFields.find(felt => felt.id == update.id).name, data: update.dane, id: update.id }
+              parsedFields.push(temp)
+              hero.fields = JSON.stringify(parsedFields);
+              break;
             }
-            levels.update(data, { where: { userId: msg.author.id } });
-        })
-        levels.sync();
+        }
+      })
+      Heroes.update(hero, { where: { id: request.query.id } });
+      response.send('Jest oke');
+      Heroes.sync();
     })
+  })
 })
 
-client.on('message', msg => {
-    var memberN = msg.member.nickname;
-    if (memberN === null) memberN = msg.author.username;
-    if (!(msg.content.startsWith(prefix.default))) return;
-    var sReader = new StringReader(msg.content.substring(prefix.default.length));
-    var command = sReader.readWord();
-    var arg = [];
-    arg[0] = sReader.readWord();
-    arg[1] = sReader.readWord();
-    arg[2] = sReader.readWord();
-    var parsedArg = ~~arg[0] == 0 ? undefined : ~~arg[0];
-    switch (command) {
-        case 'dice':
-            client.commands.get('dice').execute(msg, parsedArg, Discord, arg[0] == 'help');
-            break;
-        case 'ping':
-            client.commands.get('ping').execute(msg, arg[0] == 'help');
-            break;
-        case 'ship':
-            client.commands.get('ship').execute(msg, [arg[0], arg[1]], arg[0] == 'help');
-            break;
-        case 'npc':
-            client.commands.get('npc').execute(msg, Discord, arg[0] == 'help');
-            break;
-        case 'place':
-            client.commands.get('place').execute(msg, Discord, arg[0] == 'help');
-            break;
-        case 'translate':
-            var lang = arg[0], text = msg.content.split(' ').slice(2).join(" ");
-            client.commands.get('translate').execute(msg, [lang, text], yandex, Discord, arg[0] == 'help');
-            break;
-        case 'addme':
-            client.commands.get('addme').execute(msg, arg[0] == 'help');
-            break;
-        case 'lyrics':
-            client.commands.get('lyrics').execute(msg, msg.content.split(' ').slice(1).join(" "), arg == 'help')
-            break;
-        case 'atak':
-            var outcome = client.commands.get('atak').execute(msg, arg[0], arg[1], arg[2], Discord, memberN, arg[0] == 'help', client.userAttack)
-            if (outcome) {
-                let userColl = client.userAttack.get(outcome.user) || { plus: 0, minus: 0 }
-                if (outcome.outcome) userColl.plus++;
-                else userColl.minus++;
-                client.userAttack.set(outcome.user, userColl)
-            }
-            break;
-        case 'time':
-            client.commands.get('time').execute(msg, arg[1], Discord, arg[0] == 'help');
-            break;
-        case 'unik':
-            client.commands.get('unik').execute(msg, arg[0], Discord, memberN, arg[0] == 'help')
-            break;
-        case 'profile':
-            client.commands.get('profile').execute(msg, memberN, Discord, levels, arg[0] == 'help')
-            break;
-    }
 
-    if (msg.author.id == '344048874656366592') {
-        var YuiGuildMember = msg.guild.members.find(member => member.id === '551414888199618561')
-        if (msg.content.startsWith('yui!command')) client.commands.get('owner_command').execute(msg, YuiGuildMember);
+//Discord Bot
+const Discord = require("discord.js");
+const Yui = new Discord.Client();
+Yui.commands = new Discord.Collection();
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+Yui.userAttack = new Discord.Collection();
 
-        if (msg.content.startsWith('yui!spam')) {
-            var num = command[1], textArray = command.slice(2);
-            client.commands.get('owner_spam').execute(msg, num, textArray.join(' '))
+for (const file of commandFiles)
+  Yui.commands.set(require(`./commands/${file}`).name, require(`./commands/${file}`));
+
+//Events
+Yui.on("ready", () => {
+  let normal = { game: { name: "ludziuf", type: "watching" }, status: "online" };
+  let service = { game: { name: "Przerwa techniczna :D", type: "playing" }, status: "idle" };
+  Yui.user.setPresence(normal);
+  console.log("Logged & synced");
+});
+
+Yui.on("message", msg => {
+  if (msg.content.startsWith("yui!")) return;
+  if (msg.author.bot) return;
+  levels.count().then(ids => {
+    levels
+      .findOrCreate({ where: { userId: msg.author.id }, defaults: { id: ids + 1, xp: "0", lvl: "1", userId: msg.author.id } })
+      .then(elt => {
+        let data = elt[0].dataValues;
+        data.xp = parseInt(data.xp) + utils.genRandom(1, 5);
+        if (parseInt(data.xp) > parseInt(data.lvl) * 200) {
+          data.xp = parseInt(data.xp) - 200;
+          data.lvl = parseInt(data.lvl) + 1;
         }
-        if (msg.content.startsWith('yui!hero')) {
-            let GuildData = GRP.findOrCreate({
-                where: { guildId: msg.guild.id }, defaults: {
-                    guildId: msg.guild.id,
-                    fields: {},
-                    max: 3,
-                    role: null,
-                    AMessage: null,
-                    DMessage: null,
-                    MoneySystem: false,
-                    XPSystem: false,
-                    Shop: {},
-                }
-            });
-            client.commands.get('hero').execute(msg, memberN, Discord, GuildData, 'Name', arg[0] == 'help')
-        }
-    }
-
-    GRP.sync();
-    Heroes.sync();
+        levels.update(data, { where: { userId: msg.author.id } });
+      });
     levels.sync();
+  });
 });
 
-client.on('message', msg => {
-    var YuiGuildMemberName = msg.guild.members.find(member => member.id === '551414888199618561').nickname;
+Yui.on("message", msg => {
+  let YuiGuildMemberName = "", mention = utils.mentions(msg), memberUser = msg.guild ? msg.member.nickname : null, memberMentionedName,
+    sReader = new StringReader(msg.content.substring(prefix.default.length)), command = sReader.readWord(), arg = [], outcome;
+  if (msg.guild) YuiGuildMemberName = msg.guild.members.find(member => member.id === "551414888199618561").nickname;
+  else YuiGuildMemberName = "Yui";
+  if ((msg.isMemberMentioned(Yui.user) && !msg.mentions.everyone && (msg.cleanContent === `@${Yui.user.username}` ||
+    msg.cleanContent === `@${YuiGuildMemberName}`) && !msg.author.bot) || msg.content.startsWith("yui!help")) {
+    var embed = new Discord.RichEmbed().setColor("RANDOM")
+      .setTitle("Pomoc dla Yui! (Czyli mnie), wersja 2.1.0").addField("UWAGA!", "Przed każdą komendą dodaj `yui!`")
+      .addField("For fun", "`ship`, `translate`, `lyrics`").addField("Gify",
+        "`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`")
+      .addField("Inne", "`addme`, `ping`, `profile`").addField("Roleplay", "`dice`, `atak`, `unik`, hero")
+      .addField("Administracyjne", "`time`, `settings`").addField("Output komendy :",
+        "`[argument]` - nie wymagany, `<argument>` - wymagany").addField("Pomoc dla komendy: ", "yui!<komenda> help");
+    msg.channel.send(embed);
+  }
+  if (!msg.content.startsWith(prefix.default)) return;
+  Yui.Discord = Discord;
+  if (command == "settings") Yui.GuildData = GData;
+  if (command == "ranking" || command == "profile") Yui.levels = levels;
 
-    if ((msg.isMemberMentioned(client.user) && !msg.mentions.everyone &&
-        (msg.cleanContent === `@${client.user.username}` || msg.cleanContent === `@${YuiGuildMemberName}`))
-        && !msg.author.bot || msg.content.startsWith('yui!help')) {
-        var embed = new Discord.RichEmbed().setColor('RANDOM')
-            .setTitle('Pomoc dla Yui! (Czyli mnie), wersja 1.8')
-            .addField('UWAGA!', 'Przed każdą komendą dodaj `yui!`')
-            .addField('For fun', '`ship`, `translate`, `lyrics`')
-            .addField('Gify', '`kiss`,`hug`, `slap`, `cookie`, `cry`, `cheer`, `pat`, `angry`, `smile`,  `cat`')
-            .addField('Inne', '`addme`, `ping`, `profile`')
-            .addField('Roleplay', '`dice`, `atak`, `unik`')
-            .addField('Administracyjne', '`time`, `npc`, `place`')
-            .addField('Output komendy :', '`[argument]` - nie wymagany, `<argument>` - wymagany')
-            .addField('Pomoc dla komendy: ', 'yui!<komenda> help');
-        msg.channel.send(embed);
+  if (memberUser === null) memberUser = msg.author.username;
+  if (mention.member) {
+    if (msg.author.id != msg.mentions.members.first().id) {
+      memberMentionedName = msg.mentions.members.first().nickname;
+      if (memberMentionedName == null)
+        memberMentionedName = msg.mentions.members.first().user.username;
     }
+  }
+
+  for (var i = 0; i < 4; i++) {
+    arg.push(sReader.readWord())
+  }
+
+  switch (command) {
+    case "dice":
+      Yui.commands.get("dice").execute(Yui, msg);
+      break;
+    case "ping":
+      Yui.commands.get("ping").execute(Yui, msg);
+      break;
+    case "ship":
+      Yui.commands.get("ship").execute(Yui, msg);
+      break;
+    case "translate":
+      Yui.commands.get("translate").execute(Yui, msg);
+      break;
+    case "addme":
+      Yui.commands.get("addme").execute(Yui, msg);
+      break;
+    case "lyrics":
+      Yui.commands.get("lyrics").execute(Yui, msg);
+      break;
+    case "atak":
+      outcome = Yui.commands.get("atak").execute(Yui, msg);
+      break;
+    case "time":
+      Yui.commands.get("time").execute(Yui, msg);
+      break;
+    case "unik":
+      Yui.commands.get("unik").execute(Yui, msg);
+      break;
+    case "profile":
+      Yui.commands.get("profile").execute(Yui, msg);
+      break;
+    case "settings":
+      Yui.commands.get("settings").execute(Yui, msg);
+      break;
+    case "hero":
+      GData.findOrCreate({
+        where: { guildId: msg.guild.id },
+        defaults: utils.getGDT(msg.guild.id)
+      }).then(guildData => {
+        Yui.commands.get("hero").execute(Yui, msg, memberUser, guildData[0].dataValues, Heroes, arg[0] == "help");
+        Heroes.sync()
+      });
+      break;
+    case "ranking":
+      Yui.commands.get("ranking").execute(Yui, msg);
+      break;
+    case "keiko":
+      Yui.commands.get("keiko").execute(Yui, msg);
+      break;
+    case "kiss":
+      Yui.commands.get("kiss").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "hug":
+      Yui.commands.get("hug").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "slap":
+      Yui.commands.get("slap").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cry":
+      Yui.commands.get("cry").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cheer":
+      Yui.commands.get("cheer").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "pat":
+      Yui.commands.get("pat").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "angry":
+      Yui.commands.get("angry").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "smile":
+      Yui.commands.get("smile").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cookie":
+      Yui.commands.get("cookie").execute(msg, [memberUser, memberMentionedName], arg[0] == "help");
+      break;
+    case "cat":
+      Yui.commands.get("cat").execute(msg, memberUser, arg[0] == "help");
+      break;
+  }
+
+  if (outcome) {
+    switch (command) {
+      case "atak":
+        addOutcome(outcome);
+        break;
+    }
+  }
+  GData.sync();
+  Heroes.sync();
+  levels.sync();
 });
 
-//Reakcje, gify i słodkie rzeczy.
+Yui.login(process.env.SECRET);
 
-client.on('message', msg => {
-    if (!(msg.content.startsWith('yui!'))) return;
-    var command = msg.content.substring('yui!'.length).split(' ').filter(element => element);
-
-    //Variables
-    var everyone = false, self = false, memberMentionedName;
-    var memberUser = msg.member.nickname;
-    if (memberUser === null) memberUser = msg.author.username;
-    let mention = require('./mention.js')(msg);
-
-    if (mention.everyone) everyone = true;
-    if (mention.member) {
-        if (msg.author.id == msg.mentions.members.first().id) {
-            msg.channel.send(Errors.MentionSelf)
-            return;
-        }
-        memberMentionedName = msg.mentions.members.first().nickname;
-        if (memberMentionedName == null) memberMentionedName = msg.mentions.members.first().user.username;
-    }
-    if (mention.self) self = true;
-
-    switch (command[0]) {
-        case 'kiss':
-            client.commands.get("kiss").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'hug':
-            client.commands.get("hug").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'slap':
-            client.commands.get("slap").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'cry':
-            client.commands.get("cry").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'cheer':
-            client.commands.get("cheer").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'pat':
-            client.commands.get("pat").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'angry':
-            client.commands.get("angry").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'smile':
-            client.commands.get("smile").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'cookie':
-            client.commands.get("cookie").execute(msg, [memberUser, memberMentionedName], command[1] == 'help');
-            break;
-        case 'cat':
-            client.commands.get("cat").execute(msg, memberUser, command[1] == 'help');
-            break;
-    }
-});
-
-client.login(process.env.SECRET);
+function addOutcome(outcome) {
+  if (outcome) {
+    let userColl = Yui.userAttack.get(outcome.user) || { plus: 0, minus: 0 };
+    if (outcome.outcome) userColl.plus++;
+    else userColl.minus++;
+    Yui.userAttack.set(outcome.user, userColl);
+  }
+}

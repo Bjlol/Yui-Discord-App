@@ -7,12 +7,15 @@ class StringReader {
     getText() { return this.text; }
     getCursor() { return this.cursor; }
 
+    getRemaing() { return this.text.substring(this.cursor) }
+
     moveByInt(num = 1) { this.cursor += num; }
     moveByText(text) { this.cursor += text.length; }
 
     peek() { return this.text.charAt(this.cursor); }
     canRead(num = 1) { return this.cursor + num <= this.text.length; }
 
+    skipMention() { this.cursor += 21 }
     skipSpaces() { while (this.peek().trim() == '' && this.canRead()) { this.moveByInt(); } }
     readChar() {
         this.moveByInt();
@@ -31,13 +34,14 @@ class StringReader {
         else {
             this.skipSpaces();
             if (this.peek() == '"') {
+                this.cursor++;
                 let start = this.cursor;
                 this.moveByInt();
                 while (this.canRead() && this.peek() != '"') {
                     this.moveByInt();
                 }
                 this.moveByInt();
-                return this.text.substring(start, this.cursor);
+                return this.text.substring(start, this.cursor - 1);
             } else {
                 return '';
             }
@@ -50,21 +54,29 @@ class StringReader {
             ch == '4' || ch == '5' ||
             ch == '6' || ch == '7' ||
             ch == '8' || ch == '9' ||
-            ch == '-';
+            ch == '-' || ch == '+';
     }
 
     isAllowedInPoint(ch) { return this.isAllowedInInt(ch) || ch == '.'; }
 
     readInt() {
+        this.skipSpaces();
         let start = this.cursor;
         while (this.canRead() && this.isAllowedInInt(this.peek())) this.moveByInt();
         return ~~(this.text.substring(start, this.cursor));
     }
 
     readPoint() {
+        this.skipSpaces();
         let start = this.cursor;
         while (this.canRead() && this.isAllowedInPoint(this.peek())) this.moveByInt();
         return parseFloat(this.text.substring(start, this.cursor));
+    }
+    readBool(parsing = undefined) {
+        if (!parsing) parsing = this.readWord();
+        if (parsing == 'false') return false;
+        if (parsing == 'true') return true;
+        return undefined;
     }
 }
 
