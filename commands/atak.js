@@ -8,7 +8,7 @@ module.exports = {
     sub[0] = interpenter.readWord();
     if (sub[0] == 'help') {
       let embed = new Yui.Discord.RichEmbed().setTitle(`Witaj ${utils.getAuthorName(msg)}`).addField('Użycie komendy:', `\`yui!atak <poziom> [klasa] [modyfikator] ${msg.guild.id == '563699676952526868' ? '[oznaczenie]' : ''}\``)
-        .addField('Opis', `Sprawdzam czy twój atak się udał i ile zadał obrażeń. Klasy: 
+        .addField('Opis', `Sprawdzam czy twój atak się udał i ile zadał obrażeń. Klasy:
                                     - normal - Normalny atak\n -ss - Sword skill (technika miecza)
                                     - mystic - Umiejętność mistyczna \n- ult - Super umiejętność` );
       if (msg.guild.id == '563699676952526868') embed.addField('Dodatkowe oznaczenia:', '`W` - Zwiększony próg obrażeń\n`Ł` - zwiększa szanse na udany atak\n`M` - Zwiększa szanse na udane skille')
@@ -31,9 +31,11 @@ module.exports = {
     if (state.third) okay = utils.genRandom(1, 40) + sub[2] + getBase(sub[1]);
     var dmg = calcDmg(lvl);
     if (msg.guild.id == '563699676952526868') {
+      if (userComeout.plus / userComeout.minus <= 60 + lvl * 0.5) getRandomAboveTwenty() + sub[2];
+      else getRandomBelowZero() + sub[2]
       switch (sub[3]) {
         case 'W':
-          dmg = calcArmDmg(lvl);
+          dmg = calcDmg(lvl) + 5;
           break;
         case 'Ł':
           if (getBase(sub[1]) == 0) okay = Math.round(okay + okay * 0, 1);
@@ -44,10 +46,12 @@ module.exports = {
       }
     }
     if (okay >= 20) {
-      msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`).addField('Informacje:', getAnswer(sub[1], dmg, okay)).setColor('GREEN'))
+      msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`)
+      .addField('Informacje:', getAnswer(sub[1], dmg, okay)).setColor('GREEN'))
       return { user: msg.author.id, outcome: true }
     } else {
-      msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`).addField('Informacje:', `[${okay}] Niestety, atak się nie udał...`).setColor('RED'))
+      msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`)
+      .addField('Informacje:', `[${okay}] Niestety, atak się nie udał...`).setColor('RED'))
       return { user: msg.author.id, outcome: false }
     }
   }
@@ -108,15 +112,6 @@ function getRandomBelowZero() { return utils.genRandom(1, 20); }
 function getRandomAboveTwenty() { return utils.genRandom(20, 40); }
 
 function calcDmg(lvl) {
-  let num = utils.genRandom(1, lvl * 10 + 40)
-
-  while (num < lvl * 10) num = utils.genRandom(1, lvl * 10 + 40)
-  return num;
-}
-
-function calcArmDmg(lvl) {
-  let num = utils.genRandom(1, lvl * 10 + 45)
-
-  while (num < (lvl * 10) + 5) num = utils.genRandom(1, lvl * 10 + 45)
-  return num;
+  lvl = lvl == 0 ? 1 : lvl;
+  return utils.genRandom(lvl * 10, lvl * 10 + 40);
 }

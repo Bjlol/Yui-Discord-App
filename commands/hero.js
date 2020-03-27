@@ -1,10 +1,10 @@
 const utils = require('./../utils.js'), commands = require('./../commands.js'), StringReader = require('./../stringReader.js'),
-    errors = require('./../errors.js');
+    errors = require('./../errors.js'), Discord = require('discord.js');
 
 module.exports = {
     name: "hero",
     execute: (Yui, msg, memberN, GuildsData, HeroesData) => {
-        let Heroes = HeroesData.findAll({ where: { guildId: msg.guild.id, userId: msg.author.id } });
+        let Heroes = HeroesData.findAll({ where: { guildId: msg.guild.id, userId: msg.author.id } }).then(Heroes => {
         if (!GuildsData.rpEnabled) {
             msg.channel.send('Ta komenda jest zablokowana! Odblokuj paczkę RP, korzystając z komendy `yui!settings enable rp`')
             return;
@@ -53,7 +53,8 @@ module.exports = {
                     id: encrypt(msg.guild.id, msg.author.id, Heroes.length + 1)
                 }
                 msg.channel.send(`Stworzono nowego bohatera o nazwie **${newHero.name}**, wypełnij wymagane pola i ciesz się zabawą! Id postaci: ${newHero.id}`)
-                Heroes.create(newHero);
+                HeroesData.create(newHero);
+            break;
             case 'list':
                 if (sub[1] == 'help') {
                     msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`)
@@ -102,7 +103,7 @@ module.exports = {
                 if (contains) {
                     if (pass) msg.channel.send(`Usunięto postać o id **${sub[1]}**`)
                     else msg.channel.send(errors.NoPerms)
-                   Heroes.destroy({ where: { id: sub[1] } });
+                   HeroesData.destroy({ where: { id: sub[1] } });
                 } else {
                     msg.channel.send(`No sorka! Ale nie mogę znaleźć twojej postaci o id **${sub[1]}** \nMoże pomyliłeś serwery albo nie jest to twoja postać ¯\\_(ツ)_/¯`)
                     return;
@@ -134,7 +135,7 @@ module.exports = {
                 sub[1] = interpenter.readWord();
                 msg.author.send(`Edytuj swoją postać na: http://yui-discord-bot.glitch.me/edithero?id=${sub[1]}&uid=${msg.author.id}`)
                 break;
-        }
+        }})
     }
 }
 

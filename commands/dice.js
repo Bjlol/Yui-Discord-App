@@ -16,7 +16,7 @@ module.exports = {
           if (parseInt(sub[1]) != NaN) min = parseInt(sub[1]);
         }
       }
-      let number = utils.genRandom(min, maks);
+      let number = utils.genRandom(min, maks + 1);
       msg.channel.send(new Discord.RichEmbed().setTitle('Witaj ' + name).setColor('RANDOM').addField('Rzuciłeś kostką!', `Wyrzuciłeś ${number}`))
     }
   }

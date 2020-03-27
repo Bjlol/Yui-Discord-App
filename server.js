@@ -64,9 +64,103 @@ GData.sync();
 Heroes.sync();
 levels.sync();
 
-requests.forEach(elt => {
-  if (elt.beforeLogin) app.get(elt.adress, (request, response) => elt.execute(request, response, { levels, Yui, Heroes, GData }))
+app.get("/levels", (_request, response) => {
+  levels.findAll().then(res => {
+    res.sort((lelt, relt) => {
+      if (relt.lvl - lelt.lvl != 0) return relt.lvl - lelt.lvl;
+      else return relt.xp - lelt.xp;
+    });
+    response.send(res);
+  });
+});
+
+app.get("/api/picture", (_request, response) => response.send(Yui.user.avatarURL));
+app.get("/api/guilds", (_request, response) => {
+  let text = Yui.guilds.reduce((acc, value) => {
+    let acc1 = acc;
+    let elt = {
+      name: value.name, id: value.id,
+      NumOfChannels: value.channels.size, NumOdMembers: value.members.size,
+      NumOfEmojis: value.emojis.size, NumOfRoles: value.roles.size,
+      owner: {
+        id: value.ownerID,
+        tag: value.owner.user.tag
+      },
+      icon: value.iconURL,
+      isKeikoThere: value.members.find(elt => elt.id == "622783718783844356") ? true : false,
+      region: value.region
+    }
+    acc1.push(elt);
+    return acc1;
+  }, []);
+  response.send(text);
+});
+app.get("/dbfile", (_request, response) => {
+  response.sendFile(__dirname + "/.data/datas.db")
 })
+app.get("/hero", (_request, response) => { response.sendFile(__dirname + '/webpage/templateHero.html') })
+app.get("/edithero", (request, response) => {
+  Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
+    if (!elt) response.sendFile(__dirname + '/webpage/findless.html')
+    else {
+      if (elt.userId == request.query.uid) response.sendFile(__dirname + '/webpage/templateEditHero.html')
+      else response.sendFile(__dirname + '/webpage/noperms.html')
+    }
+  })
+})
+app.get("/api/hero", (request, response) => {
+  Heroes.findOne({ where: { id: request.query.id } }).then(hero => {
+    if (hero) {
+      let editedHero = hero.dataValues;
+      delete editedHero.createdAt;
+      delete editedHero.updatedAt;
+      response.send(editedHero)
+    } else {
+      response.send(null)
+    }
+  });
+})
+app.get("/api/guildsettings", (request, response) => {
+  GData.findOne({ where: { guildId: request.query.id } }).then(settings => {
+    let editedSettings = settings.dataValues;
+    delete editedSettings.id;
+    delete editedSettings.createdAt;
+    delete editedSettings.updatedAt;
+    response.send(editedSettings)
+  });
+})
+app.get("/api/heroupdate", (request, response) => {
+  Heroes.findOne({ where: { id: request.query.id } }).then(elt => {
+    let hero = elt.dataValues;
+    GData.findOne({ where: { guildId: hero.guildId } }).then(guild => {
+      JSON.parse(decodeURIComponent(request.get('data'))).forEach(update => {
+        switch (update.type) {
+          case 'img':
+            hero.imageLink = update.dane;
+            break;
+          case 'field':
+            let parsedGFields = JSON.parse(guild.dataValues.fields);
+            let parsedFields = JSON.parse(hero.fields);
+            let temp = parsedFields.find(field => field.id == update.id);
+            if (temp) {
+              temp.data = update.dane;
+              parsedFields[parsedFields.findIndex(field => field.id == update.id)] = temp
+              hero.fields = JSON.stringify(parsedFields);
+            } else {
+              temp = { name: parsedGFields.find(felt => felt.id == update.id).name, data: update.dane, id: update.id }
+              parsedFields.push(temp)
+              hero.fields = JSON.stringify(parsedFields);
+              break;
+            }
+        }
+      })
+      Heroes.update(hero, { where: { id: request.query.id } });
+      response.send('Jest oke');
+      Heroes.sync();
+    })
+  })
+})
+
 
 //Discord Bot
 const Discord = require("discord.js");
@@ -109,7 +203,7 @@ Yui.on("message", msg => {
 });
 
 Yui.on("message", msg => {
-  let YuiGuildMemberName = "", mention = utils.mentions(msg), memberUser = msg.member.nickname, memberMentionedName,
+  let YuiGuildMemberName = "", mention = utils.mentions(msg), memberUser = msg.guild ? msg.member.nickname : null, memberMentionedName,
     sReader = new StringReader(msg.content.substring(prefix.default.length)), command = sReader.readWord(), arg = [], outcome;
   if (msg.guild) YuiGuildMemberName = msg.guild.members.find(member => member.id === "551414888199618561").nickname;
   else YuiGuildMemberName = "Yui";
@@ -181,7 +275,7 @@ Yui.on("message", msg => {
         where: { guildId: msg.guild.id },
         defaults: utils.getGDT(msg.guild.id)
       }).then(guildData => {
-        Yui.commands.get("hero").execute(Yui, msg, memberN, guildData[0].dataValues, Heroes, arg[0] == "help");
+        Yui.commands.get("hero").execute(Yui, msg, memberUser, guildData[0].dataValues, Heroes, arg[0] == "help");
         Heroes.sync()
       });
       break;

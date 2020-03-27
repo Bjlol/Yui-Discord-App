@@ -19,14 +19,20 @@ module.exports = {
       response.on('end', () => {
         responseText = JSON.parse(responseText);
         if (responseText.lyrics) {
-          msg.channel.send(new Discord.RichEmbed().setTitle('Znaleziona piosenka: ')
+          msg.channel.send(new Yui.Discord.RichEmbed().setTitle('Znaleziona piosenka: ')
             .addField('Tytuł: ', responseText.title).addField('Autor: ', responseText.author)
             .setThumbnail(responseText.thumbnail.genius).setColor('RANDOM').setFooter(`Źródło: ${responseText.links.genius}`));
-          let textEmbed = new Discord.RichEmbed().setTitle('Tekst: ').setColor('RANDOM');
+          let textEmbed = new Yui.Discord.RichEmbed().setTitle('Tekst: ').setColor('RANDOM');
           let voices = responseText.lyrics.match(/([\[]\w+.+[\s|\]]\n)+/g);
           let text = responseText.lyrics.split(/([\[]\w+.+[\s|\]]\n)+/g).map(elt => elt.replace(/([\[]\w+.+[\s|\]]\n)+/g, '===========')).filter(elt => elt);
           if (voices || text) {
-            for (let i = 0; i < text.length; i++) textEmbed.addField(voices[i], text[i]);
+            for (let i = 0; i < text.length; i++) {
+              if(i % 25 == 0) {
+                msg.channel.send(textEmbed)
+                textEmbed = new Yui.Discord.RichEmbed().setTitle('Tekst').setColor('RANDOM')
+              }
+              textEmbed.addField(`Linia: ${i % 25 + 1}`, text[i]);
+            }
             msg.channel.send(textEmbed)
           } else {
             msg.channel.send(textEmbed.addField('Coś nie tak albo nie umiem czytać ale proszę:', responseText.lyrics))
