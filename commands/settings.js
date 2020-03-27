@@ -1,4 +1,4 @@
-const StringReader = require('./../stringReader.js'), errors = require('./../errors.js'), utils = require('./../utils.js')
+const StringReader = require('./../stringReader.js'), errors = require('./../errors.js'), utils = require('./../utils.js');
 
 module.exports = {
     name: "settings",
@@ -7,7 +7,7 @@ module.exports = {
             let GuildData = gdata[0].dataValues;
             let GuildDataTemplate = utils.getGDT(msg.guild.id);
             if (!(msg.member.hasPermission('MANAGE_ROLES') || utils.isOwner(msg.author.id))) {
-                msg.channel.send(errors.NoPerms)
+                msg.channel.send(errors.NoPerms);
                 return;
             }
             let interpenter = new StringReader(msg.content.substring('yui!settings'.length));
@@ -29,32 +29,32 @@ module.exports = {
             > **reset** - Przywraca wartości domyślne serwera
             Gdy nic nie wpiszesz pokażą się aktualne ustawienia
             Status 'paczek' sprawdzisz \`yui!settings enable\` lub \`yui!settings disable\`
-            Help po gałązce żeby dowiedzieć się więcej`))
+            Help po gałązce żeby dowiedzieć się więcej`));
             } else {
                 let interpenter = new StringReader(msg.content.substring('yui!settings'.length));
                 var sub = [];
-                sub[0] = interpenter.readWord()
+                sub[0] = interpenter.readWord();
                 switch (sub[0]) {
                     case 'max':
                         if (GuildData.rpEnabled) {
-                            sub[1] = interpenter.readWord()
+                            sub[1] = interpenter.readWord();
                             switch (sub[1]) {
                                 case 'set':
                                     sub[2] = interpenter.readInt();
-                                    if (Math.sign(sub[2]) == 1) {
-                                        let data = JSON.parse(GuildData.config)
+                                    if (Math.sign(sub[2]) === 1) {
+                                        let data = JSON.parse(GuildData.config);
                                         data.max = sub[2];
-                                        GuildData.config = JSON.stringify(data)
+                                        GuildData.config = JSON.stringify(data);
                                         msg.channel.send('Ustawiono na ' + sub[2])
                                     } else {
                                         msg.channel.send(errors.NumberBelowZero);
                                     }
                                     break;
                                 case 'clear':
-                                    let data = JSON.parse(GuildData.config)
+                                    let data = JSON.parse(GuildData.config);
                                     data.max = 3;
-                                    GuildData.config = JSON.stringify(data)
-                                    msg.channel.send('Ustawiono na wartość domyślną, `3`')
+                                    GuildData.config = JSON.stringify(data);
+                                    msg.channel.send('Ustawiono na wartość domyślną, `3`');
                                     break;
                                 case 'help':
                                     msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`)
@@ -63,54 +63,14 @@ module.exports = {
                                             `> \`set\` <cyfra> - Ustawia maksymalną liczbe postaci na serwerze
                                         > \`clear\` - Przywraca wartość domyślną (3)
                                         > \`help\` - Pokazuje tą wiadomość
-                                        Bez argumentów pokazuje aktualną maksymalną liczbe postaci na serwerze!`))
+                                        Bez argumentów pokazuje aktualną maksymalną liczbe postaci na serwerze!`));
                                     return;
                                 default:
-                                    msg.channel.send('Możesz mieć maksymalnie ' + JSON.parse(GuildData.config).max + ' postaci')
+                                    msg.channel.send('Możesz mieć maksymalnie ' + JSON.parse(GuildData.config).max + ' postaci');
                                     break;
                             }
                         } else {
-                            msg.channel.send('Ta komenda jest zablokowana! Odblokuj paczkę RP, korzystając z komendy `yui!settings enable rp`')
-                        }
-                        break;
-                    case 'channel':
-                        sub[1] = interpenter.readWord()
-                        switch (sub[1]) {
-                            case 'set':
-                                sub[2] = msg.mentions.channels.first();
-                                if (sub[2] != null) {
-                                    let data = JSON.parse(GuildData.config)
-                                    data.max = sub[2].id;
-                                    GuildData.config = JSON.stringify(data)
-                                    msg.channel.send('Kanał dla komendy `chat` Ustawiono na ' + sub[2])
-                                } else {
-                                    msg.channel.send(errors.KillMe);
-                                }
-                                break;
-                            case 'clear':
-                                let data = JSON.parse(GuildData.config)
-                                data.chatChannel = null;
-                                GuildData.config = JSON.stringify(data)
-                                msg.channel.send('Przywrócono wartość domyślną')
-                                break;
-                            case 'help':
-                                msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`)
-                                    .addField('Użycie komendy', 'yui!settings channel <ciąg dalszy>')
-                                    .addField('Dodatkowa pomoc:',
-                                        `> \`set\` <kanał> - Ustawia kanał do komendy \`chat\`
-                                    > \`clear\` - Przywraca wartość domyślną
-                                    > \`help\` - Pokazuje tą wiadomość
-                                    Bez argumentów pokazuje aktualny kanał do komendy \`chat\`!`))
-                                return;
-                            default:
-                                let channel = JSON.parse(GuildData.config).chatChannel == null ? '' : '<#' + JSON.parse(GuildData.config).chatChannel + '>'
-                                if (JSON.parse(GuildData.config).chatChannel != null) {
-                                    msg.channel.send(`Wybrany kanał do rozmów z innnymi serwerami to ${channel}`)
-                                } else {
-                                    msg.channel.send(`Nie wybrano kanału... Więc wybiorę domyślny ;3\nPatrz ${msg.guild.systemChannel ? msg.guild.systemChannel :
-                                        '... Jednak nie... Nie wybiorę nic... Komenda `chat` nie będzie działać i zostaje wyłączona do czasu ustawienia kanału'}`)
-                                }
-                                break;
+                            msg.channel.send('Ta komenda jest zablokowana! Odblokuj paczkę RP, korzystając z komendy `yui!settings enable rp`');
                         }
                         break;
                     case 'enable':
@@ -179,60 +139,6 @@ module.exports = {
                                 break;
                         }
                         break;
-                    case 'messages':
-                        if (GuildData.rpEnabled) {
-                            msg.channel.send('Nie długo to będzie UvU, pewnie w kolejnej aktualizacji!')
-                            /*
-                            sub[1] = interpenter.readWord();
-                            switch (sub[1]) {
-                                case 'aprove':
-                                    sub[2] = interpenter.readWord();
-                                    switch (sub[2]) {
-                                        case 'set':
-                                        case 'clear':
-                                        default:
-                                    }
-                                    break;
-                                case 'decline':
-                                    sub[1] = interpenter.readWord();
-                                    switch (sub[2]) {
-                                        case 'set':
-                                        case 'clear':
-                                        default:
-                                    }
-                                    break;
-                            }*/
-                        } else {
-                            msg.channel.send(errors.RPDisabled);
-                        }
-                        break;
-                    case 'roles':
-                        if (GuildData.rpEnabled) {
-                            msg.channel.send('Nie długo to będzie UvU, pewnie w kolejnej aktualizacji!')
-                            /*
-                            sub[1] = interpenter.readWord();
-                            switch (sub[1]) {
-                                case 'aprove':
-                                    sub[2] = interpenter.readWord();
-                                    switch (sub[2]) {
-                                        case 'set':
-                                        case 'clear':
-                                        default:
-                                    }
-                                    break;
-                                case 'decline':
-                                    sub[1] = interpenter.readWord();
-                                    switch (sub[2]) {
-                                        case 'set':
-                                        case 'clear':
-                                        default:
-                                    }
-                                    break;
-                            }*/
-                        } else {
-                            msg.channel.send(errors.RPDisabled);
-                        }
-                        break;
                     case 'fields':
                         sub[1] = interpenter.readWord();
                         let gdFields = JSON.parse(GuildData.fields)
@@ -241,11 +147,11 @@ module.exports = {
                                 sub[2] = interpenter.readQuotedString();
                                 sub[3] = interpenter.readWord();
                                 sub[4] = interpenter.readWord();
-                                if (sub[3] != 'yes' && sub[3] != 'no') {
+                                if (sub[3] !== 'yes' && sub[3] !== 'no') {
                                     msg.channel.send(errors.KillMe);
                                     return;
                                 }
-                                if (sub[4] != 'int' && sub[4] != 'point' && sub[4] != 'string') {
+                                if (sub[4] !== 'int' && sub[4] !== 'point' && sub[4] !== 'string') {
                                     msg.channel.send(errors.KillMe);
                                     return;
                                 }
@@ -255,17 +161,17 @@ module.exports = {
                                 }
                                 gdFields.push(field);
                                 GuildData.fields = JSON.stringify(gdFields);
-                                msg.channel.send(`Dodano pole o nazwie **${'"' + sub[2] + '"'}**, które **${sub[3] == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a jego typ to **${sub[4]}**`)
+                                msg.channel.send(`Dodano pole o nazwie **${'"' + sub[2] + '"'}**, które **${sub[3] == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a jego typ to **${sub[4]}**`);
                                 break;
                             case 'remove':
                                 sub[2] = interpenter.readInt();
-                                let fieldTD = gdFields.findIndex(elt => elt.id == sub[2]);
-                                if (fieldTD == -1) {
+                                let fieldTD = gdFields.findIndex(elt => elt.id === sub[2]);
+                                if (fieldTD === -1) {
                                     msg.channel.send(errors.CantFind);
                                     return;
                                 } else {
-                                    let deletedField = gdFields.splice(fieldTD, 1)[0]
-                                    msg.channel.send(`Usunięto pole o nazwie **${'"' + deletedField.name + '"'}**, które **${deletedField.optional == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a jego typ to **${deletedField.type}**`)
+                                    let deletedField = gdFields.splice(fieldTD, 1)[0];
+                                    msg.channel.send(`Usunięto pole o nazwie **${'"' + deletedField.name + '"'}**, które **${deletedField.optional == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a jego typ to **${deletedField.type}**`);
                                 }
                                 break;
                             case 'help':
@@ -279,32 +185,32 @@ module.exports = {
                                     > \`list\` - Pokazuje listę dostępnych pól
                                     > \`help\` - Pokazuje tą wiadomość
                                     Nazwa musi być w pomiędzy \`"\`, opcjonalne - Przyjmuje tylko wartości \`yes\` i \`no\`
-                                    Typy pól: \n\`int\` - Liczba\n\`point\` - Liczba zmiennoprzecinkowa np. \`1.2\`\n\`string\` - Dowolny ciąg znaków, przy wypełnianiu \`\\n\` to nowa lina!`))
+                                    Typy pól: \n\`int\` - Liczba\n\`point\` - Liczba zmiennoprzecinkowa np. \`1.2\`\n\`string\` - Dowolny ciąg znaków, przy wypełnianiu \`\\n\` to nowa lina!`));
                                 return;
                             case 'list':
                                 let mess = gdFields.reduce((sum, acc) => {
                                     return sum += `- '**${acc.name}**', **${acc.optional == 'yes' ? 'jest' : 'nie jest'}** opcjonalne a typ to **${acc.type}**, id: **${acc.id}**\n`
                                 }, '')
                                 if (mess == '') msg.channel.send('Nie masz żadnych pól >.<\nPo pomoc \`yui!settings fields help\`')
-                                else msg.channel.send(new Yui.Discord.RichEmbed().setTitle('Witaj!').addField('O to pola dostępne na serwerze:', mess))
+                                else msg.channel.send(new Yui.Discord.RichEmbed().setTitle('Witaj!').addField('O to pola dostępne na serwerze:', mess));
                         }
                         break;
                     case 'reset':
                         GuildData = GuildDataTemplate;
-                        msg.channel.send('Pomyślnie przywrócono wartości domyślne w ustawieniach!')
+                        msg.channel.send('Pomyślnie przywrócono wartości domyślne w ustawieniach!');
                         break;
                     default:
                         let config = JSON.parse(GuildData.config)
                         msg.channel.send(new Yui.Discord.RichEmbed().setTitle('Witaj').addField('Id serwera:', GuildData.guildId)
                             .addField('Maksymalna liczba postaci:', config.max)
-                            .addField('Kanał do komendy `chat` (Wkrócte):', config.chatChannel == null ? 'Domyślne' : config.chatChannel)
+                            .addField('Kanał do komendy `chat` (Wkrócte):', config.chatChannel === null ? 'Domyślne' : config.chatChannel)
                             .addField('Skalowanie z lvl komendy atak (wkrótce)', config.atackScalling)
                             .addField('Bazowy dmg komendy atak (wkrótce)', config.atackBase)
                             .addField('Startowy stan konta postaci (wkrótce)', config.startingBalance)
                             .addField('Paczki', `\n\`Rp\` - ${GuildData.rpEnabled ? 'włączone' : 'wyłączone'}`
                                 + `\n\`Money\` - ${GuildData.MoneySystem ? 'włączone' : 'wyłączone'}`
                                 + `\n\`Xp\` - ${GuildData.XPSystem ? 'włączone' : 'wyłączone'}`)
-                            .setColor('RANDOM'))
+                            .setColor('RANDOM'));
                 }
                 Yui.GuildData.update(GuildData, { where: { guildId: msg.guild.id } });
             }

@@ -34,6 +34,6 @@ module.exports = {
             "member": mentions.members.first() != undefined,
             "self": !(mentions.members.first() != undefined || mentions.everyone)
         }
-    }
-
+    },
+    encrypt: (guildId, userId, id) => { return `${guildId}${userId}${id}`; }
 }

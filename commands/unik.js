@@ -1,21 +1,25 @@
-const commands = require('./../commands.js'), utils = require('./../utils.js'), errors = require('./../errors.js')
+let errors = require('./../errors.js'), utils = require('./../utils.js'), commands = require('./../commands.js'),
+  StringReader = require('./../stringReader.js');
 
 module.exports = {
-    name: "unik",
-    execute: (msg, chanceModififier = 0,Discord, name, help) => {
-      if(help) {
-        msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj ${name}`).addField('Użycie komendy:', `\`yui!unik [modyfikator]\``)
-                         .addField('Opis', `Sprawdzam czy twój unik się udał` ))
-      } else {
-       let okay = utils.genRandom(1, 40);
-      if(chanceModififier != 0) {
-          okay += parseInt(chanceModififier);
-      }
-      if(okay < 20) {
-        msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`).addField('Informacje:', `[${okay}] Niestety, unik się nie udał...`).setColor('RED'))
-      } else {
-        msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${name}`).addField('Informacje:', `[${okay}] Twój unik się udał!`).setColor('GREEN'))
-      }
+  name: "unik",
+  execute: (Yui, msg) => {
+    let interpenter = new StringReader(msg.content.substring('yui!unik'.length)), chanceModififier = 0;
+    let chance = interpenter.readInt();
+    let help = chance == 'help' ? true : false;
+    if (help) {
+      msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj ${utils.getAuthorName(msg)}`).addField('Użycie komendy:', `\`yui!unik [modyfikator]\``)
+        .addField('Opis', `Sprawdzam czy twój unik się udał`))
+      return;
     }
+    let okay = utils.genRandom(1, 40) + chance;
+    if (msg.author.id == 326744195903651841) {
+      if (okay < 20) okay += 10;
     }
+    if (okay < 20) {
+      msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`).addField('Informacje:', `[${okay}] Niestety, unik się nie udał...`).setColor('RED'))
+    } else {
+      msg.channel.send(new Yui.Discord.RichEmbed().setTitle(`Witaj, ${utils.getAuthorName(msg)}`).addField('Informacje:', `[${okay}] Twój unik się udał!`).setColor('GREEN'))
+    }
+  }
 }
