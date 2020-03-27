@@ -26,7 +26,13 @@ module.exports = {
           let voices = responseText.lyrics.match(/([\[]\w+.+[\s|\]]\n)+/g);
           let text = responseText.lyrics.split(/([\[]\w+.+[\s|\]]\n)+/g).map(elt => elt.replace(/([\[]\w+.+[\s|\]]\n)+/g, '===========')).filter(elt => elt);
           if (voices || text) {
-            for (let i = 0; i < text.length; i++) textEmbed.addField(`Linia: ${i + 1}`, text[i]);
+            for (let i = 0; i < text.length; i++) {
+              if(i % 25 == 0) {
+                msg.channel.send(textEmbed)
+                textEmbed = new Yui.Discord.RichEmbed().setTitle('Tekst').setColor('RANDOM')
+              }
+              textEmbed.addField(`Linia: ${i % 25 + 1}`, text[i]);
+            }
             msg.channel.send(textEmbed)
           } else {
             msg.channel.send(textEmbed.addField('Coś nie tak albo nie umiem czytać ale proszę:', responseText.lyrics))

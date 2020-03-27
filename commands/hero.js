@@ -54,6 +54,7 @@ module.exports = {
                 }
                 msg.channel.send(`Stworzono nowego bohatera o nazwie **${newHero.name}**, wypełnij wymagane pola i ciesz się zabawą! Id postaci: ${newHero.id}`)
                 HeroesData.create(newHero);
+            break;
             case 'list':
                 if (sub[1] == 'help') {
                     msg.channel.send(new Discord.RichEmbed().setTitle(`Witaj, ${memberN}`)

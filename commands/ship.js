@@ -18,7 +18,7 @@ module.exports = {
         msg.channel.send(errors.KillMe);
         return;
       }
-      let randomNumber = (process.env.SECRET.length * sub[0].length * sub[1].length) % 100, answer;
+      let randomNumber = (process.env.SECRET.length * sub[0].length * sub[1].length) % 100 + 1, answer;
       if (randomNumber >= 0 && randomNumber < 20) answer = data.ship[0];
       if (randomNumber >= 20 && randomNumber < 40) answer = data.ship[1];
       if (randomNumber >= 40 && randomNumber < 60) answer = data.ship[2];
