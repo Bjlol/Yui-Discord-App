@@ -76,7 +76,7 @@ function getBase(clas) {
   return base;
 }
 
-function getAnswer(clas, dmg, random, answer = 'podstawowego ataku') {
+function getAnswer(clas, dmg, random) {
   let answer = "podstawowego ataku";
   switch (clas) {
     case 'ss':
